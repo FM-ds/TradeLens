@@ -7,5 +7,5 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
-  base: '/tradelens/', // Important for GitHub Pages
+  base: '/TradeLens/', // Important for GitHub Pages
 })
