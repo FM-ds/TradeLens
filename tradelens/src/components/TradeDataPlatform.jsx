@@ -272,7 +272,7 @@ const TradeDataPlatform = () => {
               {!sidebarCollapsed && (
                 <h1 className="text-lg font-bold text-white flex items-center">
                   <BarChart3 className="w-5 h-5 mr-2 text-blue-400" />
-                  Trade Explorer
+                  TradeLens
                 </h1>
               )}
               
