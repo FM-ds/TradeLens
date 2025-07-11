@@ -1,6 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Search, TrendingUp, TrendingDown, Globe, Package, BarChart3, PieChart, LineChart, DollarSign } from 'lucide-react';
 import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell, AreaChart, Area } from 'recharts';
+
+// 1. Define API base URL
+const API_BASE = "http://ec2-13-50-241-167.eu-north-1.compute.amazonaws.com:8000";
 
 const TradeDataPlatform = () => {
   const [queries, setQueries] = useState([]);
@@ -20,7 +23,7 @@ const TradeDataPlatform = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [selectedYear, setSelectedYear] = useState('2024');
   const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState(10); // allow changing if needed
 
   // Auto-collapse on narrow screens
   useEffect(() => {
@@ -46,37 +49,105 @@ const TradeDataPlatform = () => {
     'Trade: Imports'
   ];
 
-  // Dummy data for suggestions
-  const productSuggestions = [
-    { code: '8703.21', name: 'Motor cars with spark-ignition engine' },
-    { code: '2710.12', name: 'Light petroleum oils' },
-    { code: '8517.12', name: 'Telephones for cellular networks' },
-    { code: '3004.90', name: 'Medicaments (excluding antibiotics)' },
-    { code: '8542.31', name: 'Processors and controllers' },
-    { code: '1001.19', name: 'Durum wheat' },
-    { code: '7108.13', name: 'Gold in semi-manufactured forms' },
-    { code: '2709.00', name: 'Petroleum oils, crude' },
-    { code: '8471.30', name: 'Portable automatic data processing machines' },
-    { code: '9018.32', name: 'Tubular metal needles' }
-  ];
+  // API-backed suggestions
+  const [productSuggestions, setProductSuggestions] = useState([]);
+  const [countrySuggestions, setCountrySuggestions] = useState([]);
+  const [productLoading, setProductLoading] = useState(false);
+  const [countryLoading, setCountryLoading] = useState(false);
 
-  const countrySuggestions = [
-    'United States', 'China', 'Germany', 'Japan', 'United Kingdom', 
-    'France', 'India', 'Italy', 'Brazil', 'Canada'
-  ];
+  // Trade data from API
+  const [tradeData, setTradeData] = useState([]);
+  const [tradeDataTotal, setTradeDataTotal] = useState(0);
+  const [tradeDataTotalPages, setTradeDataTotalPages] = useState(1);
+  const [tradeDataLoading, setTradeDataLoading] = useState(false);
 
-  const filteredProductSuggestions = productSuggestions.filter(item => 
-    item.name.toLowerCase().includes(productSearch.toLowerCase()) ||
-    item.code.toLowerCase().includes(productSearch.toLowerCase())
-  );
+  // 2. Fetch product suggestions from API
+  useEffect(() => {
+    if (!productSearch) {
+      setProductSuggestions([]);
+      return;
+    }
+    setProductLoading(true);
+    fetch(`${API_BASE}/api/products?search=${encodeURIComponent(productSearch)}&limit=8`)
+      .then(res => res.json())
+      .then(data => setProductSuggestions(data))
+      .catch(() => setProductSuggestions([]))
+      .finally(() => setProductLoading(false));
+  }, [productSearch]);
 
-  const filteredFromCountrySuggestions = countrySuggestions.filter(item => 
-    item.toLowerCase().includes(fromCountrySearch.toLowerCase())
-  );
+  // 3. Fetch country suggestions from API
+  useEffect(() => {
+    if (!fromCountrySearch && !showFromCountrySuggestions && !toCountrySearch && !showToCountrySuggestions) {
+      setCountrySuggestions([]);
+      return;
+    }
+    const search = fromCountrySearch || toCountrySearch || '';
+    setCountryLoading(true);
+    fetch(`${API_BASE}/api/countries?search=${encodeURIComponent(search)}&limit=10`)
+      .then(res => res.json())
+      .then(data => setCountrySuggestions(data))
+      .catch(() => setCountrySuggestions([]))
+      .finally(() => setCountryLoading(false));
+  }, [fromCountrySearch, showFromCountrySuggestions, toCountrySearch, showToCountrySuggestions]);
 
-  const filteredToCountrySuggestions = countrySuggestions.filter(item => 
-    item.toLowerCase().includes(toCountrySearch.toLowerCase())
-  );
+  // 4. Fetch trade data from API when query is active
+  useEffect(() => {
+    if (!activeQueryId) {
+      setTradeData([]);
+      setTradeDataTotal(0);
+      setTradeDataTotalPages(1);
+      return;
+    }
+    const query = queries.find(q => q.id === activeQueryId);
+    if (!query) return;
+
+    setTradeDataLoading(true);
+
+    // Map UI values to API params
+    const trade_type = query.tradeType.toLowerCase().replace('trade: ', '');
+    const product_codes = query.products.map(p => p.code).join(',');
+
+    // Use code for from_country and to_country if possible
+    let from_country = query.fromCountry === 'Everywhere' ? 'everywhere'
+      : query.fromCountry === 'World' ? 'world'
+      : getCountryCodeByName(query.fromCountry);
+
+    let to_country = query.toCountry === 'Everywhere' ? 'everywhere'
+      : query.toCountry === 'World' ? 'world'
+      : getCountryCodeByName(query.toCountry);
+
+    const year_from = query.startYear;
+    const year_to = query.endYear;
+    const page = currentPage;
+    const page_size = rowsPerPage;
+
+    const params = new URLSearchParams({
+      trade_type,
+      product_codes,
+      from_country,
+      to_country,
+      year_from,
+      year_to,
+      page,
+      page_size,
+    });
+
+    fetch(`${API_BASE}/api/trade-query?${params.toString()}`)
+      .then(res => res.json())
+      .then(data => {
+        console.log("Query URL:", `${API_BASE}/api/trade-query?${params.toString()}`);
+        setTradeData(data.data || []);
+        setTradeDataTotal(data.total_records || 0);
+        setTradeDataTotalPages(data.total_pages || 1);
+      })
+      .catch(() => {
+        setTradeData([]);
+        setTradeDataTotal(0);
+        setTradeDataTotalPages(1);
+      })
+      .finally(() => setTradeDataLoading(false));
+  // eslint-disable-next-line
+  }, [activeQueryId, currentPage, rowsPerPage, queries]);
 
   const handleProductSearch = (value) => {
     setProductSearch(value);
@@ -156,81 +227,28 @@ const TradeDataPlatform = () => {
     return `${direction} of ${products || 'products'} from ${query.fromCountry} to ${query.toCountry}`;
   };
 
-  // Dummy trade data for results
-  const generateTradeData = () => {
-    const countries = ['China', 'Germany', 'United States', 'Netherlands', 'France', 'Italy', 'Japan', 'Belgium'];
-    const years = ['2020', '2021', '2022', '2023', '2024'];
-    const data = [];
-    
-    selectedProducts.forEach(product => {
-      years.forEach(year => {
-        if (fromCountry === 'Everywhere') {
-          // Return individual country records
-          countries.forEach(country => {
-            data.push({
-              id: `${product.code}-${country}-${year}`,
-              productCode: product.code,
-              productName: product.name,
-              year: parseInt(year),
-              partner: country,
-              tradeFlow: tradeType.replace('Trade: ', ''),
-              value: Math.floor(Math.random() * 1000000) + 50000,
-              quantity: Math.floor(Math.random() * 100000) + 5000,
-              unit: 'kg'
-            });
-          });
-        } else {
-          // Single record for specified country
-          data.push({
-            id: `${product.code}-${fromCountry}-${year}`,
-            productCode: product.code,
-            productName: product.name,
-            year: parseInt(year),
-            partner: fromCountry === 'World' ? 'World' : fromCountry,
-            tradeFlow: tradeType.replace('Trade: ', ''),
-            value: fromCountry === 'World' 
-              ? Math.floor(Math.random() * 5000000) + 500000 // Aggregate world data
-              : Math.floor(Math.random() * 1000000) + 50000,
-            quantity: Math.floor(Math.random() * 100000) + 5000,
-            unit: 'kg'
-          });
-        }
-      });
-    });
-    
-    return data.filter(d => d.year >= parseInt(startYear) && d.year <= parseInt(endYear));
-  };
-
-  const tradeData = activeQueryId ? generateTradeData() : [];
-  
-  // Pagination logic
-  const totalPages = Math.ceil(tradeData.length / rowsPerPage);
+  // 7. Pagination logic (from API)
+  const totalPages = tradeDataTotalPages;
   const startIndex = (currentPage - 1) * rowsPerPage;
-  const endIndex = startIndex + rowsPerPage;
-  const currentData = tradeData.slice(startIndex, endIndex);
+  const endIndex = Math.min(startIndex + rowsPerPage, tradeDataTotal);
 
-  const goToPage = (page) => {
-    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
-  };
-
+  // 8. Download CSV from current API data
   const downloadCSV = () => {
     if (tradeData.length === 0) return;
-    
     const headers = ['Product Code', 'Product Name', 'Year', 'Partner', 'Trade Flow', 'Value (USD)', 'Quantity', 'Unit'];
     const csvContent = [
       headers.join(','),
       ...tradeData.map(row => [
-        row.productCode,
-        `"${row.productName}"`,
+        row.product_code,
+        `"${row.product}"`,
         row.year,
         row.partner,
-        row.tradeFlow,
+        row.trade_flow,
         row.value,
         row.quantity,
         row.unit
       ].join(','))
     ].join('\n');
-    
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -240,23 +258,49 @@ const TradeDataPlatform = () => {
     window.URL.revokeObjectURL(url);
   };
 
-  // Dummy chart data
-  const tradeVolumeData = [
-    { month: 'Jan', exports: 45000, imports: 38000 },
-    { month: 'Feb', exports: 52000, imports: 42000 },
-    { month: 'Mar', exports: 48000, imports: 45000 },
-    { month: 'Apr', exports: 61000, imports: 48000 },
-    { month: 'May', exports: 55000, imports: 52000 },
-    { month: 'Jun', exports: 67000, imports: 58000 },
-  ];
+  const filteredProductSuggestions = productSuggestions;
+const filteredFromCountrySuggestions = countrySuggestions;
+const filteredToCountrySuggestions = countrySuggestions;
 
-  const topTradingPartnersData = [
-    { name: 'China', value: 28, color: '#3b82f6' },
-    { name: 'Canada', value: 22, color: '#10b981' },
-    { name: 'Mexico', value: 18, color: '#f59e0b' },
-    { name: 'Germany', value: 15, color: '#ef4444' },
-    { name: 'Japan', value: 17, color: '#8b5cf6' },
-  ];
+// Dummy data for charts (add before return)
+const tradeVolumeData = [
+  { month: 'Jan', exports: 45000, imports: 38000 },
+  { month: 'Feb', exports: 52000, imports: 42000 },
+  { month: 'Mar', exports: 48000, imports: 45000 },
+  { month: 'Apr', exports: 61000, imports: 48000 },
+  { month: 'May', exports: 55000, imports: 52000 },
+  { month: 'Jun', exports: 67000, imports: 58000 },
+];
+
+const topTradingPartnersData = [
+  { name: 'China', value: 28, color: '#3b82f6' },
+  { name: 'Canada', value: 22, color: '#10b981' },
+  { name: 'Mexico', value: 18, color: '#f59e0b' },
+  { name: 'Germany', value: 15, color: '#ef4444' },
+  { name: 'Japan', value: 17, color: '#8b5cf6' },
+];
+
+useEffect(() => {
+  fetch(`${API_BASE}/api/countries?limit=1000`)
+    .then(res => res.json())
+    .then(data => {
+      const map = {};
+      data.forEach(c => {
+        if (c.country_name && c.code) {
+          map[c.country_name] = c.code;
+        }
+      });
+      setCountryCodeMap(map);
+    });
+}, []);
+
+// Helper to get country code from countrySuggestions by name
+function getCountryCodeByName(name) {
+  if (!name) return '';
+  return countryCodeMap[name] || name;
+}
+const [countryCodeMap, setCountryCodeMap] = useState({});
+
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
@@ -438,10 +482,14 @@ const TradeDataPlatform = () => {
                           <button
                             key={index}
                             onClick={() => handleSelectProduct(suggestion)}
-                            className="w-full text-left px-6 py-4 hover:bg-gray-600 text-white border-b border-gray-600 last:border-b-0 transition-colors"
+                            className="w-full text-left px-6 py-4 hover:bg-gray-600 text-white border-b border-gray-600 last:border-b-0 transition-colors flex flex-col items-start"
                           >
-                            <div className="font-medium text-lg">{suggestion.code}</div>
-                            <div className="text-sm text-gray-400 truncate">{suggestion.name}</div>
+                            <span className="text-sm text-gray-400 truncate">
+                              {suggestion.code || suggestion.product_code}
+                            </span>
+                            <span className="font-medium text-lg">
+                              {suggestion.name || suggestion.description}
+                            </span>
                           </button>
                         ))}
                       </div>
@@ -521,13 +569,13 @@ const TradeDataPlatform = () => {
                             <div className="font-medium">World</div>
                             <div className="text-xs text-gray-400">Aggregated global data</div>
                           </button>
-                          {countrySuggestions.slice(0, 6).map((suggestion, index) => (
+                          {filteredFromCountrySuggestions.slice(0, 6).map((suggestion, index) => (
                             <button
                               key={index}
-                              onClick={() => handleSelectFromCountry(suggestion)}
+                              onClick={() => handleSelectFromCountry(suggestion.country_name || suggestion)}
                               className="w-full text-left px-4 py-3 hover:bg-gray-600 text-white border-b border-gray-600 last:border-b-0"
                             >
-                              {suggestion}
+                              {suggestion.country_name || suggestion}
                             </button>
                           ))}
                         </div>
@@ -553,13 +601,13 @@ const TradeDataPlatform = () => {
                       {/* To Country Suggestions */}
                       {showToCountrySuggestions && (
                         <div className="absolute top-full left-0 right-0 bg-gray-700 border border-gray-600 rounded-lg mt-2 shadow-xl z-20 max-h-48 overflow-y-auto">
-                          {countrySuggestions.map((suggestion, index) => (
+                          {filteredToCountrySuggestions.map((suggestion, index) => (
                             <button
                               key={index}
-                              onClick={() => handleSelectToCountry(suggestion)}
+                              onClick={() => handleSelectToCountry(suggestion.country_name || suggestion)}
                               className="w-full text-left px-4 py-3 hover:bg-gray-600 text-white border-b border-gray-600 last:border-b-0"
                             >
-                              {suggestion}
+                              {suggestion.country_name || suggestion}
                             </button>
                           ))}
                         </div>
@@ -643,8 +691,7 @@ const TradeDataPlatform = () => {
 
                 {/* Data Table Panel */}
                 <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-                  <h4 className="text-lg font-semibold mb-4">Trade Data ({tradeData.length} records)</h4>
-                  
+                  <h4 className="text-lg font-semibold mb-4">Trade Data ({tradeDataTotal} records)</h4>
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
@@ -659,32 +706,41 @@ const TradeDataPlatform = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {currentData.map((row) => (
-                          <tr key={row.id} className="border-b border-gray-700 hover:bg-gray-750">
-                            <td className="py-2 px-3 text-blue-400 font-mono text-xs">{row.productCode}</td>
-                            <td className="py-2 px-3 text-white max-w-xs truncate text-sm" title={row.productName}>
-                              {row.productName}
-                            </td>
-                            <td className="py-2 px-3 text-gray-300">{row.year}</td>
-                            <td className="py-2 px-3 text-gray-300">{row.partner}</td>
-                            <td className="py-2 px-3 text-gray-300 text-xs">{row.tradeFlow}</td>
-                            <td className="py-2 px-3 text-right text-green-400 font-mono text-sm">
-                              ${(row.value / 1000).toFixed(0)}k
-                            </td>
-                            <td className="py-2 px-3 text-right text-gray-300 font-mono text-xs">
-                              {(row.quantity / 1000).toFixed(0)}k {row.unit}
-                            </td>
+                        {tradeDataLoading ? (
+                          <tr>
+                            <td colSpan={7} className="py-8 text-center text-gray-400">Loading...</td>
                           </tr>
-                        ))}
+                        ) : tradeData.length === 0 ? (
+                          <tr>
+                            <td colSpan={7} className="py-8 text-center text-gray-400">No data found</td>
+                          </tr>
+                        ) : (
+                          tradeData.map((row, idx) => (
+                            <tr key={row.id || idx} className="border-b border-gray-700 hover:bg-gray-750">
+                              <td className="py-2 px-3 text-blue-400 font-mono text-xs">{row.product_code}</td>
+                              <td className="py-2 px-3 text-white max-w-xs truncate text-sm" title={row.product}>
+                                {row.product}
+                              </td>
+                              <td className="py-2 px-3 text-gray-300">{row.year}</td>
+                              <td className="py-2 px-3 text-gray-300">{row.partner}</td>
+                              <td className="py-2 px-3 text-gray-300 text-xs">{row.trade_flow}</td>
+                              <td className="py-2 px-3 text-right text-green-400 font-mono text-sm">
+                                ${(row.value / 1000).toFixed(0)}k
+                              </td>
+                              <td className="py-2 px-3 text-right text-gray-300 font-mono text-xs">
+                                {(row.quantity / 1000).toFixed(0)}k {row.unit}
+                              </td>
+                            </tr>
+                          ))
+                        )}
                       </tbody>
                     </table>
                   </div>
-
                   {/* Pagination */}
                   {totalPages > 1 && (
                     <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-700">
                       <div className="text-sm text-gray-400">
-                        Showing {startIndex + 1}-{Math.min(endIndex, tradeData.length)} of {tradeData.length} records
+                        Showing {startIndex + 1}-{endIndex} of {tradeDataTotal} records
                       </div>
                       <div className="flex items-center gap-2">
                         <button
@@ -694,7 +750,6 @@ const TradeDataPlatform = () => {
                         >
                           Previous
                         </button>
-                        
                         <div className="flex items-center gap-1">
                           {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                             let pageNum;
@@ -706,8 +761,7 @@ const TradeDataPlatform = () => {
                               pageNum = totalPages - 4 + i;
                             } else {
                               pageNum = currentPage - 2 + i;
-                            }
-                            
+                            }t
                             return (
                               <button
                                 key={pageNum}
@@ -723,7 +777,6 @@ const TradeDataPlatform = () => {
                             );
                           })}
                         </div>
-                        
                         <button
                           onClick={() => goToPage(currentPage + 1)}
                           disabled={currentPage === totalPages}
