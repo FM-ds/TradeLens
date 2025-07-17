@@ -438,7 +438,7 @@ const [countryCodeMap, setCountryCodeMap] = useState({});
           <div className="max-w-7xl mx-auto">
             {/* Clean Search Interface */}
             <div className="mb-8">
-              <h2 className="text-2xl font-bold mb-6">Trade Data Analysis</h2>
+              <h2 className="text-2xl font-bold mb-6">TradeLens</h2>
               
               {/* Search Panel */}
               <div className="bg-gray-800 border border-gray-600 rounded-lg p-8">
