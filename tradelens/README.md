@@ -1,3 +1,20 @@
+# Running
+
+To run the code, run in the command line:
+pip install node
+pip install npm
+
+Install requirements with
+sudo npm install -g
+
+This might require node to be version 18.18.0, in which case run
+sudo npm install -g n
+sudo n stable
+sudo n 18.18.0
+
+Then to open the front end, run
+sudo npm run dev
+
 # React + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
