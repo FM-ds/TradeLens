@@ -1,3 +1,12 @@
+# API related files
+creds.json
+__pycache__/
+.azure/
+.venv/
+.vscode/
+pinecone/
+trade_api_env/
+
 # Logs
 logs
 *.log
