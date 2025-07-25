@@ -3,7 +3,9 @@ import { Search, TrendingUp, TrendingDown, Globe, Package, BarChart3, PieChart, 
 import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart as RechartsPieChart, Pie, Cell, AreaChart, Area } from 'recharts';
 
 // 1. Define API base URL
-const API_BASE = "http://ec2-13-50-241-167.eu-north-1.compute.amazonaws.com:8000";
+// const API_BASE = "http://ec2-13-50-241-167.eu-north-1.compute.amazonaws.com:8000";
+const API_BASE = "http://0.0.0.0:8000"; // Open a local end base
+
 
 const TradeDataPlatform = () => {
   const [queries, setQueries] = useState([]);
@@ -68,14 +70,15 @@ const TradeDataPlatform = () => {
       return;
     }
     setProductLoading(true);
-    fetch(`${API_BASE}/api/products?search=${encodeURIComponent(productSearch)}&limit=8`)
+    fetch(`${API_BASE}/api/products/?search=${encodeURIComponent(productSearch)}&limit=8`)
+
       .then(res => res.json())
       .then(data => setProductSuggestions(data))
       .catch(() => setProductSuggestions([]))
       .finally(() => setProductLoading(false));
   }, [productSearch]);
 
-  // 3. Fetch country suggestions from API
+  // // 3. Fetch country suggestions from API
   useEffect(() => {
     if (!fromCountrySearch && !showFromCountrySuggestions && !toCountrySearch && !showToCountrySuggestions) {
       setCountrySuggestions([]);
@@ -83,27 +86,30 @@ const TradeDataPlatform = () => {
     }
     const search = fromCountrySearch || toCountrySearch || '';
     setCountryLoading(true);
-    fetch(`${API_BASE}/api/countries?search=${encodeURIComponent(search)}&limit=10`)
+    fetch(`${API_BASE}/api/countries/?search=${encodeURIComponent(search)}&limit=10`)
+
       .then(res => res.json())
       .then(data => setCountrySuggestions(data))
       .catch(() => setCountrySuggestions([]))
       .finally(() => setCountryLoading(false));
   }, [fromCountrySearch, showFromCountrySuggestions, toCountrySearch, showToCountrySuggestions]);
 
-  // 4. Fetch trade data from API when query is active
+  // 4. Fetch trade data from API when query is active - !!! Trade API here?
   useEffect(() => {
+    // If no active query - set default values
     if (!activeQueryId) {
       setTradeData([]);
       setTradeDataTotal(0);
       setTradeDataTotalPages(1);
       return;
     }
+    // Search for active queries
     const query = queries.find(q => q.id === activeQueryId);
     if (!query) return;
 
     setTradeDataLoading(true);
 
-    // Map UI values to API params
+    //// Map UI values to API params
     const trade_type = query.tradeType.toLowerCase().replace('trade: ', '');
     const product_codes = query.products.map(p => p.code).join(',');
 
@@ -131,8 +137,8 @@ const TradeDataPlatform = () => {
       page,
       page_size,
     });
-
-    fetch(`${API_BASE}/api/trade-query?${params.toString()}`)
+    // Activate query end point
+    fetch(`${API_BASE}/api/trade-query/?${params.toString()}`)
       .then(res => res.json())
       .then(data => {
         console.log("Query URL:", `${API_BASE}/api/trade-query?${params.toString()}`);
@@ -281,7 +287,7 @@ const topTradingPartnersData = [
 ];
 
 useEffect(() => {
-  fetch(`${API_BASE}/api/countries?limit=1000`)
+  fetch(`${API_BASE}/api/countries/?limit=1000`)
     .then(res => res.json())
     .then(data => {
       const map = {};
@@ -301,7 +307,7 @@ function getCountryCodeByName(name) {
 }
 const [countryCodeMap, setCountryCodeMap] = useState({});
 
-
+// MAIN FRONT END DESIGN CODE
   return (
     <div className="min-h-screen bg-gray-900 text-white">
       <div className="flex h-screen">
