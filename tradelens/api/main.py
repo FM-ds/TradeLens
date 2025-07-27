@@ -155,8 +155,8 @@ async def query_trade_data(
             # Aggregated query
             select_clause = """
             SELECT 
-                product,
-                product,
+                product as product_code,
+                product as product,
                 year,
                 'World' as partner,
                 ? as trade_flow,
@@ -165,14 +165,14 @@ async def query_trade_data(
                 'kg' as unit
             """
             params.append(trade_flow_value)
-            group_clause = "GROUP BY product, product, year"
+            group_clause = "GROUP BY product, year"
         else:
             # Individual records
             partner_field = "importer" if trade_type == "exports" else "exporter"
             select_clause = f"""
             SELECT 
-                product,
-                product,
+                product as product_code,
+                product as product,
                 year,
                 {partner_field} as partner,
                 ? as trade_flow,
@@ -196,10 +196,19 @@ async def query_trade_data(
         params.extend(product_list)
         
         # Country filters
-        if from_country not in ["everywhere", "world"]:
+        # if from_country not in ["everywhere", "world"]:
+        #     where_conditions.append("exporter = ?")
+        #     params.append(from_country)
+        
+         # Country filters - UPDATED LOGIC
+        if from_country == "world":
+            # For "world": Don't filter by exporter - include ALL exporters
+            pass  # No exporter filter
+        elif from_country != "everywhere":
+            # For specific country: Filter by that exporter
             where_conditions.append("exporter = ?")
             params.append(from_country)
-        
+            
         if to_country not in ["everywhere", "world"]:
             where_conditions.append("importer = ?")
             params.append(to_country)
@@ -215,15 +224,15 @@ async def query_trade_data(
                 SELECT 1 {base_from} {where_clause} {group_clause}
             )
             """
-            count_params = list(params)
+            count_params = params[1:]
         else:
             count_query = f"SELECT COUNT(*) as total {base_from} {where_clause}"
             # Remove the trade_flow param for count if not grouped
-            count_params = list(params)
+            # count_params = list(params)
             # Remove the first param (trade_flow) for count query if not grouped
             # because it's only used in SELECT, not WHERE
-            if count_params:
-                count_params = count_params[1:]
+            #if count_params:
+            count_params = params[1:]
         
         # Data query
         offset = (page - 1) * page_size
@@ -249,20 +258,37 @@ async def query_trade_data(
         conn.close()
         
         # Convert results
-        data = [
-            TradeRecord(
-                product_code=str(row[0]),
-                product=str(row[1]),
-                year=row[2],
-                partner=str(row[3]),
-                trade_flow=row[4],
-                value=float(row[5]) if row[5] else 0.0,
-                quantity=float(row[6]) if row[6] else 0.0,
-                unit=row[7]
-            )
-            for row in data_result
-        ]
-        
+        # data = [
+        #     TradeRecord(
+        #         product_code=str(row[0]),
+        #         product=str(row[1]),
+        #         year=row[2],
+        #         partner=str(row[3]),
+        #         trade_flow=row[4],
+        #         value=float(row[5]) if row[5] else 0.0,
+        #         quantity=float(row[6]) if row[6] else 0.0,
+        #         unit=row[7]
+        #     )
+        #     for row in data_result
+        # ]
+        data = []
+        for row in data_result:
+            try:
+                trade_record = TradeRecord(
+                    product_code=str(row[0]) if row[0] is not None else "",
+                    product=str(row[1]) if row[1] is not None else "",
+                    year=int(row[2]) if row[2] is not None else 0,
+                    partner=str(row[3]) if row[3] is not None else "",
+                    trade_flow=str(row[4]) if row[4] is not None else "",
+                    value=float(row[5]) if row[5] is not None else 0.0,
+                    quantity=float(row[6]) if row[6] is not None else 0.0,
+                    unit=str(row[7]) if row[7] is not None else "kg"
+                )
+                data.append(trade_record)
+            except (IndexError, ValueError, TypeError) as e:
+                print(f"Error converting row {row}: {e}")
+                continue  # Skip problematic rows instead of crashing
+                    
         # Time the query for performance analysis
         execution_time = (datetime.now() - start_time).total_seconds() * 1000
         total_pages = (total_records + page_size - 1) // page_size

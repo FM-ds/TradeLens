@@ -195,6 +195,7 @@ const TradeDataPlatform = () => {
   };
 
   const handleNewQuery = () => {
+    setCurrentPage(1);
     const newQuery = {
       id: Date.now(),
       name: `Query ${queries.length + 1}`,
@@ -231,6 +232,15 @@ const TradeDataPlatform = () => {
     const products = query.products.map(p => p.code).join(', ');
     const direction = query.tradeType.replace('Trade: ', '');
     return `${direction} of ${products || 'products'} from ${query.fromCountry} to ${query.toCountry}`;
+  };
+
+  // goToPage function
+  const goToPage = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }else{
+      setCurrentPage(1); // Reset to first page if out of bounds
+    }
   };
 
   // 7. Pagination logic (from API)
@@ -767,7 +777,7 @@ const [countryCodeMap, setCountryCodeMap] = useState({});
                               pageNum = totalPages - 4 + i;
                             } else {
                               pageNum = currentPage - 2 + i;
-                            }t
+                            }
                             return (
                               <button
                                 key={pageNum}
