@@ -1,0 +1,47 @@
+{
+  "id": "baci",
+  "name": "BACI Trade Database",
+  "description": "International trade data by product and country, based on BACI HS17 taxonomy.",
+  "endpoints": {
+    "products": "/api/products/",
+    "countries": "/api/countries/",
+    "tradeQuery": "/api/trade-query/"
+  },
+  "product": {
+    "searchParam": "search",
+    "codeField": "code",
+    "nameField": "name",
+    "limitParam": "limit",
+    "defaultLimit": 8
+  },
+  "country": {
+    "searchParam": "search",
+    "codeField": "code",
+    "nameField": "country_name",
+    "limitParam": "limit",
+    "defaultLimit": 10
+  },
+  "query": {
+    "tradeTypeOptions": ["Trade: All", "Trade: Exports", "Trade: Imports"],
+    "defaultTradeType": "Trade: Imports",
+    "defaultStartYear": "2020",
+    "defaultEndYear": "2024",
+    "defaultRowsPerPage": 10,
+    "params": {
+      "trade_type": "trade_type",
+      "product_codes": "product_codes",
+      "from_country": "from_country",
+      "to_country": "to_country",
+      "year_from": "year_from",
+      "year_to": "year_to",
+      "page": "page",
+      "page_size": "page_size"
+    }
+  },
+  "ui": {
+    "showEverywhereOption": true,
+    "showWorldOption": true,
+    "productPillFormat": "{code}:{name}",
+    "productNameTruncate": 12
+  }
+}
