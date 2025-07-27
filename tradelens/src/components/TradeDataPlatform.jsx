@@ -4,8 +4,8 @@ import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, Tool
 
 // 1. Define API base URL
 // const API_BASE = "http://ec2-13-50-241-167.eu-north-1.compute.amazonaws.com:8000";
-const API_BASE = "http://0.0.0.0:8000"; // Open a local end base
-
+// const API_BASE = "http://0.0.0.0:8000"; // Open a local end base
+const API_BASE = "http://localhost:8000";
 
 const TradeDataPlatform = () => {
   const [queries, setQueries] = useState([]);
