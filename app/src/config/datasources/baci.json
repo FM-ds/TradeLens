@@ -9,6 +9,8 @@
   },
   "product": {
     "searchParam": "search",
+    "productTypeParam": "product_type",
+    "productType": "hs6_products",
     "codeField": "code",
     "nameField": "name",
     "limitParam": "limit",

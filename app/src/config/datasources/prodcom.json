@@ -1,0 +1,47 @@
+{
+  "id": "prodcom",
+  "name": "PRODCOM Manufacturing Database",
+  "description": "EU manufacturer sales data by CN8 product classification.",
+  "endpoints": {
+    "products": "/api/products/",
+    "countries": "/api/countries/",
+    "tradeQuery": "/api/prodcom-query/"
+  },
+  "product": {
+    "searchParam": "search",
+    "productTypeParam": "product_type",
+    "productType": "cn8_products",
+    "codeField": "code",
+    "nameField": "description",
+    "limitParam": "limit",
+    "defaultLimit": 8
+  },
+  "country": {
+    "searchParam": "search",
+    "codeField": "code",
+    "nameField": "country_name",
+    "limitParam": "limit",
+    "defaultLimit": 10
+  },
+  "query": {
+    "tradeTypeOptions": ["Value", "Volume", "Other"],
+    "defaultTradeType": "Value",
+    "defaultStartYear": "2020",
+    "defaultEndYear": "2024",
+    "defaultRowsPerPage": 10,
+    "params": {
+      "measure": "measure",
+      "product_codes": "product_codes",
+      "year_from": "year_from",
+      "year_to": "year_to",
+      "page": "page",
+      "page_size": "page_size"
+    }
+  },
+  "ui": {
+    "showEverywhereOption": false,
+    "showWorldOption": false,
+    "productPillFormat": "{code}:{name}",
+    "productNameTruncate": 12
+  }
+}

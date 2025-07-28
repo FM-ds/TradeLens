@@ -7,42 +7,98 @@ const TradeDataTable = ({
   totalPages,
   currentPage,
   goToPage,
-  rowsPerPage
-}) => (
+  rowsPerPage,
+  dataset = 'baci' // Add dataset prop to determine table structure
+}) => {
+  // Determine table structure based on dataset
+  const isBaci = dataset === 'baci';
+  const isProdcom = dataset === 'prodcom';
+  
+  // Define headers and column count based on dataset
+  const getHeaders = () => {
+    if (isProdcom) {
+      return [
+        { label: 'Code', align: 'left' },
+        { label: 'Description', align: 'left' },
+        { label: 'Type', align: 'left' },
+        { label: 'Year', align: 'left' },
+        { label: 'Measure', align: 'left' },
+        { label: 'Value', align: 'right' },
+        { label: 'Unit', align: 'left' },
+        { label: 'Flag', align: 'left' }
+      ];
+    } else {
+      // BACI headers
+      return [
+        { label: 'Code', align: 'left' },
+        { label: 'Product', align: 'left' },
+        { label: 'Year', align: 'left' },
+        { label: 'Partner', align: 'left' },
+        { label: 'Flow', align: 'left' },
+        { label: 'Value (USD)', align: 'right' },
+        { label: 'Quantity', align: 'right' }
+      ];
+    }
+  };
+
+  const headers = getHeaders();
+  const colCount = headers.length;
+  const dataTitle = isProdcom ? 'PRODCOM Data' : 'Trade Data';
+
+  return (
   <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-    <h4 className="text-lg font-semibold mb-4">Trade Data ({tradeDataTotal} records)</h4>
+    <h4 className="text-lg font-semibold mb-4">{dataTitle} ({tradeDataTotal} records)</h4>
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-gray-600">
-            <th className="text-left py-2 px-3 font-medium text-gray-300">Code</th>
-            <th className="text-left py-2 px-3 font-medium text-gray-300">Product</th>
-            <th className="text-left py-2 px-3 font-medium text-gray-300">Year</th>
-            <th className="text-left py-2 px-3 font-medium text-gray-300">Partner</th>
-            <th className="text-left py-2 px-3 font-medium text-gray-300">Flow</th>
-            <th className="text-right py-2 px-3 font-medium text-gray-300">Value (USD)</th>
-            <th className="text-right py-2 px-3 font-medium text-gray-300">Quantity</th>
+            {headers.map((header, idx) => (
+              <th key={idx} className={`py-2 px-3 font-medium text-gray-300 ${header.align === 'right' ? 'text-right' : 'text-left'}`}>
+                {header.label}
+              </th>
+            ))}
           </tr>
         </thead>
         <tbody>
           {tradeDataLoading ? (
             <tr>
-              <td colSpan={7} className="py-8 text-center text-gray-400">Loading...</td>
+              <td colSpan={colCount} className="py-8 text-center text-gray-400">Loading...</td>
             </tr>
           ) : tradeData.length === 0 ? (
             <tr>
-              <td colSpan={7} className="py-8 text-center text-gray-400">No data found</td>
+              <td colSpan={colCount} className="py-8 text-center text-gray-400">No data found</td>
             </tr>
           ) : (
             tradeData.map((row, idx) => (
               <tr key={row.id || idx} className="border-b border-gray-700 hover:bg-gray-750">
-                <td className="py-2 px-3 text-blue-400 font-mono text-xs">{row.product_code}</td>
-                <td className="py-2 px-3 text-white max-w-xs truncate text-sm" title={row.product}>{row.product}</td>
-                <td className="py-2 px-3 text-gray-300">{row.year}</td>
-                <td className="py-2 px-3 text-gray-300">{row.partner}</td>
-                <td className="py-2 px-3 text-gray-300 text-xs">{row.trade_flow}</td>
-                <td className="py-2 px-3 text-right text-green-400 font-mono text-sm">${(row.value / 1000).toFixed(0)}k</td>
-                <td className="py-2 px-3 text-right text-gray-300 font-mono text-xs">{(row.quantity / 1000).toFixed(0)}k {row.unit}</td>
+                {isProdcom ? (
+                  // PRODCOM row structure
+                  <>
+                    <td className="py-2 px-3 text-purple-400 font-mono text-xs">{row.code}</td>
+                    <td className="py-2 px-3 text-white max-w-xs truncate text-sm" title={row.description}>{row.description}</td>
+                    <td className="py-2 px-3 text-gray-300 text-xs">{row.type || 'N/A'}</td>
+                    <td className="py-2 px-3 text-gray-300">{row.year}</td>
+                    <td className="py-2 px-3 text-gray-300 text-xs">{row.measure}</td>
+                    <td className="py-2 px-3 text-right text-green-400 font-mono text-sm">
+                      {row.measure === 'Value' ? `£${(row.value / 1000).toFixed(0)}k` : 
+                       row.measure === 'Volume' ? `${(row.value / 1000).toFixed(0)}k` :
+                       `£${row.value.toFixed(2)}`}
+                    </td>
+                    <td className="py-2 px-3 text-gray-300 text-xs">{row.unit}</td>
+                    <td className="py-2 px-3 text-gray-400 text-xs">{row.flag || ''}</td>
+                  </>
+                ) : (
+                  // BACI row structure  
+                  <>
+                    <td className="py-2 px-3 text-blue-400 font-mono text-xs">{row.product_code}</td>
+                    <td className="py-2 px-3 text-white max-w-xs truncate text-sm" title={row.product}>{row.product}</td>
+                    <td className="py-2 px-3 text-gray-300">{row.year}</td>
+                    <td className="py-2 px-3 text-gray-300">{row.partner}</td>
+                    <td className="py-2 px-3 text-gray-300 text-xs">{row.trade_flow}</td>
+                    <td className="py-2 px-3 text-right text-green-400 font-mono text-sm">${(row.value / 1000).toFixed(0)}k</td>
+                    <td className="py-2 px-3 text-right text-gray-300 font-mono text-xs">{(row.quantity / 1000).toFixed(0)}k {row.unit}</td>
+                  </>
+                )}
               </tr>
             ))
           )}
@@ -85,6 +141,7 @@ const TradeDataTable = ({
       </div>
     )}
   </div>
-);
+  );
+};
 
 export default TradeDataTable;
