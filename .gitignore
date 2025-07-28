@@ -3,3 +3,6 @@ country_embeddings_dump.json
 product_embeddings_dump.json
 *.parquet
 *.npy
+
+# All .DS_Store files
+.DS_Store
