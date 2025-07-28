@@ -133,22 +133,6 @@ const BaciSearchInterface = ({
 
   return (
     <div className="bg-gray-800 border border-gray-600 rounded-lg p-8">
-      {/* Dataset Info Header */}
-      <div className="mb-8">
-        <div className="rounded-lg border-2 border-blue-500 ring-2 ring-blue-500 bg-gray-800 px-8 py-6 flex flex-col items-start min-w-[220px] shadow-lg">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-base font-bold">{config.name}</span>
-          </div>
-          <div className="text-lg font-semibold mb-1">Trade flows</div>
-          <div className="text-sm text-gray-300 mb-1">2017-2022</div>
-          <div className="text-sm text-gray-400 mb-4">{config.description}</div>
-          <div className="flex items-center gap-2 mt-4 pt-2 border-t border-gray-700 w-full">
-            <span className="text-lg text-blue-400">⚡</span>
-            <span className="text-xs text-blue-400">Fast</span>
-          </div>
-        </div>
-      </div>
-
       <BaseSearchInterface
         config={config}
         selectedProducts={selectedProducts}
