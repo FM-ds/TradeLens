@@ -11,6 +11,9 @@ from typing import Optional, List, Literal
 from datetime import datetime
 import json
 from fastapi.middleware.cors import CORSMiddleware
+from sentence_transformers import SentenceTransformer
+import numpy as np
+
 
 app = FastAPI()
 
@@ -42,6 +45,19 @@ with open("products.json", "r") as f:
     PRODUCTS = json.load(f)
 with open("countries.json", "r") as f:
     COUNTRIES = json.load(f)
+# Load embeddings with metadata
+with open("country_embeddings_dump.json", "r") as f:
+    COUNTRY_EMBEDDINGS = json.load(f)
+with open("product_embeddings_dump.json", "r") as f:
+    PRODUCT_EMBEDDINGS = json.load(f)
+
+# Load embedding model once
+EMBEDDING_MODEL = SentenceTransformer('all-MiniLM-L6-v2')
+
+# Prepare numpy arrays for fast similarity search
+COUNTRY_EMBED_MATRIX = np.array([c['embedding'] for c in COUNTRY_EMBEDDINGS])
+PRODUCT_EMBED_MATRIX = np.array([p['embedding'] for p in PRODUCT_EMBEDDINGS])
+
 
 # Model to define a trade data record object - this will move to a separate model folder
 class TradeRecord(BaseModel):
@@ -76,9 +92,10 @@ async def search_products(
     search: Optional[str] = None,
     limit: int = Query(50, le=100)
 ) -> List[dict]:
-    """Returns products matching search term."""
-    
+    """Returns products matching search term or by embedding similarity, but does not return embeddings."""
+
     if not search:
+        
         return PRODUCTS[:limit]
     
     search_term = str(search).lower()
