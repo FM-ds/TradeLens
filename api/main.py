@@ -320,30 +320,38 @@ async def query_trade_data(
             # Aggregated query
             select_clause = """
             SELECT 
-                product,
-                product,
+                product as product_code,
+                product_description,
                 year,
                 'World' as partner,
+                'World' as partner_name,
                 ? as trade_flow,
                 SUM(value) as value,
                 SUM(quantity) as quantity,
-                'kg' as unit
+                't' as unit
             """
             params.append(trade_flow_value)
-            group_clause = "GROUP BY product, product, year"
+            group_clause = "GROUP BY product, product_description, year"
         else:
             # Individual records
-            partner_field = "importer" if trade_type == "exports" else "exporter"
+            if trade_type == "exports":
+                partner_field = "importer"
+                partner_name_field = "importer_name"
+            else:
+                partner_field = "exporter" 
+                partner_name_field = "exporter_name"
+                
             select_clause = f"""
             SELECT 
-                product,
-                product,
+                product as product_code,
+                product_description,
                 year,
                 {partner_field} as partner,
+                {partner_name_field} as partner_name,
                 ? as trade_flow,
                 value as value,
                 quantity as quantity,
-                'kg' as unit
+                't' as unit
             """
             params.append(trade_flow_value)
             group_clause = ""
@@ -369,7 +377,7 @@ async def query_trade_data(
             where_conditions.append("importer = ?")
             params.append(to_country)
         
-        # Complete queries
+                # Complete queries
         base_from = "FROM 'data/BACI/baci_hs17_2017_2022.parquet'"
         where_clause = f"WHERE {' AND '.join(where_conditions)}"
         
@@ -419,11 +427,11 @@ async def query_trade_data(
                 product_code=str(row[0]),
                 product=str(row[1]),
                 year=row[2],
-                partner=str(row[3]),
-                trade_flow=row[4],
-                value=float(row[5]) if row[5] else 0.0,
-                quantity=float(row[6]) if row[6] else 0.0,
-                unit=row[7]
+                partner=str(row[4]),  # partner_name (human readable)
+                trade_flow=row[5],
+                value=float(row[6]) if row[6] else 0.0,
+                quantity=float(row[7]) if row[7] else 0.0,
+                unit=row[8]
             )
             for row in data_result
         ]

@@ -4,8 +4,7 @@ import DatasetSelector from './DatasetSelector';
 import DatasetSearchInterface from './DatasetSearchInterface';
 import ResultsHeader from './ResultsHeader';
 import TradeDataTable from './TradeDataTable';
-import TradeVolumeChart from './TradeVolumeChart';
-import MarketShareChart from './MarketShareChart';
+import DataVisualization from './DataVisualization';
 import GeographicMapPanel from './GeographicMapPanel';
 import EmptyState from './EmptyState';
 import useTradeQuery from '../hooks/useTradeQuery';
@@ -15,7 +14,6 @@ const TradeDataPlatform = () => {
   const [queries, setQueries] = useState([]);
   const [activeQueryId, setActiveQueryId] = useState(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [selectedYear, setSelectedYear] = useState('2024');
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
@@ -31,18 +29,19 @@ const TradeDataPlatform = () => {
     rowsPerPage
   );
 
-  // Auto-collapse on narrow screens
+  // Auto-collapse on narrow screens (disabled - keep sidebar expanded by default)
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth < 1024) { // lg breakpoint
-        setSidebarCollapsed(true);
-      } else {
-        setSidebarCollapsed(false);
-      }
+      // Commenting out auto-collapse behavior
+      // if (window.innerWidth < 1024) { // lg breakpoint
+      //   setSidebarCollapsed(true);
+      // } else {
+      //   setSidebarCollapsed(false);
+      // }
     };
 
-    // Set initial state
-    handleResize();
+    // Set initial state - keep sidebar expanded
+    // handleResize();
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -75,7 +74,10 @@ const TradeDataPlatform = () => {
       const direction = query.tradeType.replace('Trade: ', '');
       const from = query.fromCountries.join(', ') || 'Any';
       const to = query.toCountries.join(', ') || 'Any';
-      return `${direction} of ${products || 'products'} from ${from} to ${to}`;
+      
+      // Use appropriate preposition based on trade direction
+      const preposition = direction.toLowerCase() === 'exports' ? 'to' : 'from';
+      return `${direction} of ${products || 'products'} from ${from} ${preposition} ${to}`;
     } else if (query.dataset === 'prodcom') {
       // PRODCOM query display
       const measure = query.measureType || 'Value';
@@ -104,24 +106,6 @@ const TradeDataPlatform = () => {
     setCurrentPage(page);
   };
 
-// Dummy data for charts
-const topTradingPartnersData = [
-  { name: 'China', value: 28, color: '#3b82f6' },
-  { name: 'Canada', value: 22, color: '#10b981' },
-  { name: 'Mexico', value: 18, color: '#f59e0b' },
-  { name: 'Germany', value: 15, color: '#ef4444' },
-  { name: 'Japan', value: 17, color: '#8b5cf6' },
-];
-
-const tradeVolumeData = [
-  { month: 'Jan', exports: 45000, imports: 38000 },
-  { month: 'Feb', exports: 52000, imports: 42000 },
-  { month: 'Mar', exports: 48000, imports: 45000 },
-  { month: 'Apr', exports: 61000, imports: 48000 },
-  { month: 'May', exports: 55000, imports: 52000 },
-  { month: 'Jun', exports: 67000, imports: 58000 },
-];
-
 // MAIN FRONT END DESIGN CODE
   return (
     <div className="min-h-screen bg-gray-900 text-white">
@@ -139,8 +123,8 @@ const tradeVolumeData = [
           selectedProducts={[]} // Not used in new approach
         />
         {/* Main Content */}
-        <div className="flex-1 p-4 md:p-8 overflow-auto min-w-0">
-          <div className="max-w-7xl mx-auto">
+        <div className="flex-1 p-4 md:p-8 overflow-auto min-w-0" style={{ width: '100%' }}>
+          <div className="max-w-7xl mx-auto" style={{ width: '100%' }}>
             {/* Clean Search Interface */}
             <div className="mb-8">
               <h2 className="text-2xl font-bold mb-6">TradeLens</h2>
@@ -162,7 +146,7 @@ const tradeVolumeData = [
             </div>
             {/* Results Section */}
             {activeQueryId && (
-              <div className="space-y-6">
+              <div className="space-y-6" style={{ width: '100%' }}>
                 <ResultsHeader
                   query={queries.find(q => q.id === activeQueryId)}
                   getQueryDisplayName={getQueryDisplayName}
@@ -181,11 +165,10 @@ const tradeVolumeData = [
                   rowsPerPage={rowsPerPage}
                   dataset={activeQuery?.dataset || 'baci'}
                 />
-                <TradeVolumeChart tradeVolumeData={tradeVolumeData} />
-                <MarketShareChart
-                  topTradingPartnersData={topTradingPartnersData}
-                  selectedYear={selectedYear}
-                  setSelectedYear={setSelectedYear}
+                <DataVisualization
+                  data={tradeData}
+                  dataset={activeQuery?.dataset || 'baci'}
+                  query={activeQuery}
                 />
                 <GeographicMapPanel />
               </div>

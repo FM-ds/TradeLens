@@ -175,7 +175,9 @@ const BaseSearchInterface = ({
             </div>
           </div>
 
-          <div className="text-gray-400 text-lg pb-3">to</div>
+          <div className="text-gray-400 text-lg pb-3">
+            {tradeType === 'Trade: Exports' ? 'to' : 'from'}
+          </div>
 
           {/* To Country */}
           <div className="relative flex-1">

@@ -84,7 +84,10 @@ const TradeDataTable = ({
                        row.measure === 'Volume' ? `${(row.value / 1000).toFixed(0)}k` :
                        `£${row.value.toFixed(2)}`}
                     </td>
-                    <td className="py-2 px-3 text-gray-300 text-xs">{row.unit}</td>
+                    <td className="py-2 px-3 text-gray-300 text-xs">
+                      {/* Remove 'k' suffix from PRODCOM units */}
+                      {row.unit?.replace(/k$/, '') || ''}
+                    </td>
                     <td className="py-2 px-3 text-gray-400 text-xs">{row.flag || ''}</td>
                   </>
                 ) : (
@@ -96,7 +99,10 @@ const TradeDataTable = ({
                     <td className="py-2 px-3 text-gray-300">{row.partner}</td>
                     <td className="py-2 px-3 text-gray-300 text-xs">{row.trade_flow}</td>
                     <td className="py-2 px-3 text-right text-green-400 font-mono text-sm">${(row.value / 1000).toFixed(0)}k</td>
-                    <td className="py-2 px-3 text-right text-gray-300 font-mono text-xs">{(row.quantity / 1000).toFixed(0)}k {row.unit}</td>
+                    <td className="py-2 px-3 text-right text-gray-300 font-mono text-xs">
+                      {/* BACI quantities are already in metric tons, show with proper unit */}
+                      {(row.quantity).toFixed(0)} {row.unit}
+                    </td>
                   </>
                 )}
               </tr>

@@ -9,3 +9,6 @@ product_embeddings_dump.json
 
 # Node related setup
 node_modules/
+
+# Every CSV starting with BACI_
+BACI_*.csv
