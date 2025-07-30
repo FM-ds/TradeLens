@@ -18,6 +18,7 @@ const Sidebar = ({
           <h1 className="text-lg font-bold text-white flex items-center">
             <BarChart3 className="w-5 h-5 mr-2 text-blue-400" />
             TradeLens
+            <span className="ml-2 px-2 py-1 text-xs font-medium bg-orange-600 text-white rounded-full">Beta</span>
           </h1>
         )}
         {sidebarCollapsed && (

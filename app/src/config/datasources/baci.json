@@ -27,7 +27,11 @@
     "tradeTypeOptions": ["Trade: All", "Trade: Exports", "Trade: Imports"],
     "defaultTradeType": "Trade: Imports",
     "defaultStartYear": "2020",
-    "defaultEndYear": "2024",
+    "defaultEndYear": "2022",
+    "yearRange": {
+      "min": 2017,
+      "max": 2022
+    },
     "defaultRowsPerPage": 10,
     "params": {
       "trade_type": "trade_type",

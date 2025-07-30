@@ -266,9 +266,18 @@ const BaseSearchInterface = ({
               className="w-full bg-transparent text-white text-lg focus:outline-none border-b-2 border-gray-600 focus:border-blue-500 transition-colors py-3 appearance-none"
               disabled={disabled}
             >
-              {Array.from({length: 15}, (_, i) => 2024 - i).map(year => (
-                <option key={year} value={year} className="bg-gray-700">{year}</option>
-              ))}
+              {(() => {
+                const yearRange = config.query?.yearRange;
+                if (yearRange) {
+                  return Array.from({length: yearRange.max - yearRange.min + 1}, (_, i) => yearRange.max - i).map(year => (
+                    <option key={year} value={year} className="bg-gray-700">{year}</option>
+                  ));
+                } else {
+                  return Array.from({length: 15}, (_, i) => 2024 - i).map(year => (
+                    <option key={year} value={year} className="bg-gray-700">{year}</option>
+                  ));
+                }
+              })()}
             </select>
           </div>
           <div className="text-gray-400 text-lg pb-3">and</div>
@@ -279,9 +288,18 @@ const BaseSearchInterface = ({
               className="w-full bg-transparent text-white text-lg focus:outline-none border-b-2 border-gray-600 focus:border-blue-500 transition-colors py-3 appearance-none"
               disabled={disabled}
             >
-              {Array.from({length: 15}, (_, i) => 2024 - i).map(year => (
-                <option key={year} value={year} className="bg-gray-700">{year}</option>
-              ))}
+              {(() => {
+                const yearRange = config.query?.yearRange;
+                if (yearRange) {
+                  return Array.from({length: yearRange.max - yearRange.min + 1}, (_, i) => yearRange.max - i).map(year => (
+                    <option key={year} value={year} className="bg-gray-700">{year}</option>
+                  ));
+                } else {
+                  return Array.from({length: 15}, (_, i) => 2024 - i).map(year => (
+                    <option key={year} value={year} className="bg-gray-700">{year}</option>
+                  ));
+                }
+              })()}
             </select>
           </div>
         </div>
