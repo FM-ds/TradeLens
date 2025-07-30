@@ -73,7 +73,11 @@ class TradeRecord(BaseModel):
     product_code: str      # HS/CN8 product code
     product: str      # Product description
     year: int             # Trade year
-    partner: str          # Trading partner country
+    # partner: str          # Trading partner country
+    exporter_name: str
+    exporter_id: int
+    importer_name: str
+    importer_id: int
     trade_flow: str       # "imports" or "exports"
     value: float          # Trade value in USD
     quantity: float       # Quantity traded
@@ -352,18 +356,15 @@ async def query_trade_data(
             params.append(trade_type)
             
         else:
-            # Individual records - show specific trade flows
-            if trade_type == "exports":
-                partner_field = "importer"
-            else:
-                partner_field = "exporter"
-                
-            select_clause = f"""
+            select_clause = f""" 
             SELECT 
                 CAST(product AS VARCHAR) as product_code,
                 product_description,
                 year,
-                CAST({partner_field} AS VARCHAR) as partner,
+                CAST(importer AS VARCHAR) as importer_id,
+                CAST(importer_name AS VARCHAR) as importer_name,
+                CAST(exporter AS VARCHAR) as importer_id,
+                CAST(exporter_name AS VARCHAR) as exporter_name,
                 ? as trade_flow,
                 value as value,
                 quantity as quantity,
@@ -384,35 +385,15 @@ async def query_trade_data(
         where_conditions.append(f"CAST(product AS VARCHAR) IN ({product_placeholders})")
         params.extend(product_list)
         
-        if trade_type == "exports":
-            # For exports: from_country = exporter, to_country = importer
-            # Example: UK exports to USA → from_country=826, to_country=840
-            # Query: exporter=826 AND importer=840
+        if from_country not in ["everywhere", "world"] and from_country_list:
+            from_placeholders = ",".join(["?" for _ in from_country_list])
+            where_conditions.append(f"CAST(exporter AS VARCHAR) IN ({from_placeholders})")
+            params.extend(from_country_list)
             
-            if from_country not in ["everywhere", "world"] and from_country_list:
-                from_placeholders = ",".join(["?" for _ in from_country_list])
-                where_conditions.append(f"CAST(exporter AS VARCHAR) IN ({from_placeholders})")
-                params.extend(from_country_list)
-            
-            if not aggregate_data and to_country not in ["everywhere", "world"] and to_country_list:
-                to_placeholders = ",".join(["?" for _ in to_country_list])
-                where_conditions.append(f"CAST(importer AS VARCHAR) IN ({to_placeholders})")
-                params.extend(to_country_list)
-                
-        elif trade_type == "imports":
-            # For imports: from_country = exporter (origin), to_country = importer (destination)  
-            # Example: UK imports from USA → from_country=840, to_country=826
-            # Query: exporter=840 AND importer=826
-            
-            if from_country not in ["everywhere", "world"] and from_country_list:
-                from_placeholders = ",".join(["?" for _ in from_country_list])
-                where_conditions.append(f"CAST(exporter AS VARCHAR) IN ({from_placeholders})")
-                params.extend(from_country_list)
-            
-            if not aggregate_data and to_country not in ["everywhere", "world"] and to_country_list:
-                to_placeholders = ",".join(["?" for _ in to_country_list])
-                where_conditions.append(f"CAST(importer AS VARCHAR) IN ({to_placeholders})")
-                params.extend(to_country_list)
+        if not aggregate_data and to_country not in ["everywhere", "world"] and to_country_list:
+            to_placeholders = ",".join(["?" for _ in to_country_list])
+            where_conditions.append(f"CAST(importer AS VARCHAR) IN ({to_placeholders})")
+            params.extend(to_country_list)
         
         else:  # trade_type == "all"
             # For "all": include both import and export flows
@@ -472,16 +453,19 @@ async def query_trade_data(
             try:
                 product_code = str(row[0]) if row[0] is not None else ""
                 product_description = str(row[1]) if row[1] is not None else f"Product {product_code}"
-                
+                 
                 trade_record = TradeRecord(
                     product_code=product_code,
                     product=product_description,
                     year=int(row[2]) if row[2] is not None else 0, 
-                    partner=str(row[3]) if row[3] is not None else "",
-                    trade_flow=str(row[4]) if row[4] is not None else "",
-                    value=float(row[5]) if row[5] is not None else 0.0,
-                    quantity=float(row[6]) if row[6] is not None else 0.0,
-                    unit=str(row[7]) if row[7] is not None else "KG Tonnes" 
+                    importer_id=str(row[3]) if row[3] is not None else "",
+                    importer_name=str(row[4]) if row[4] is not None else "",
+                    exporter_id=str(row[5]) if row[5] is not None else "",
+                    exporter_name=str(row[6]) if row[6] is not None else "",
+                    trade_flow=str(row[7]) if row[7] is not None else "",
+                    value=float(row[8]) if row[8] is not None else 0.0,
+                    quantity=float(row[9]) if row[9] is not None else 0.0,
+                    unit=str(row[10]) if row[10] is not None else "KG Tonnes" 
                 )
                 data.append(trade_record)
             except (IndexError, ValueError, TypeError) as e:
