@@ -31,6 +31,34 @@ with open("data/shared/HS6_products.json", "r") as f:
 with open("data/shared/countries.json", "r") as f:
     COUNTRIES = json.load(f)
 
+# Function to get product description
+def get_product_description(product_code: str) -> str:
+    """Get product description from HS6_products.json"""
+    try:
+        # Debug: Check the structure of PRODUCTS
+        if isinstance(PRODUCTS, dict):
+            # If PRODUCTS is a dictionary with categories
+            for category, products in PRODUCTS.items():
+                if isinstance(products, dict) and product_code in products:
+                    return products[product_code]
+        elif isinstance(PRODUCTS, list):
+            # If PRODUCTS is a list of objects
+            for item in PRODUCTS:
+                if isinstance(item, dict):
+                    # Check if this item has the product code
+                    if item.get('code') == product_code:
+                        return item.get('name', item.get('description', f"Product {product_code}"))
+        else:
+            # If PRODUCTS is a flat dictionary
+            if product_code in PRODUCTS:
+                return PRODUCTS[product_code]
+        
+        return f"Product {product_code}"
+        
+    except Exception as e:
+        print(f"Error in get_product_description for code {product_code}: {e}")
+        return f"Product {product_code}"
+
 # Load embeddings with metadata - organized by product type
 EMBEDDINGS_DATA = {
     "countries": [],
@@ -304,99 +332,142 @@ async def query_trade_data(
     if year_to < year_from:
         raise HTTPException(status_code=400, detail="year_to must be >= year_from")
     
-    
     product_list = [code.strip() for code in product_codes.split(",") if code.strip()]
     if not product_list:
         raise HTTPException(status_code=400, detail="At least one product code required")
     
+    # Parse country codes 
+    from_country_list = [code.strip() for code in from_country.split(",") if code.strip() and code.strip() not in ["everywhere", "world"]]
+    to_country_list = [code.strip() for code in to_country.split(",") if code.strip() and code.strip() not in ["everywhere", "world"]]
+    
     try:
-        aggregate_from = from_country == "world"
-        trade_flow_value = trade_type if trade_type != "all" else "imports"
+        # "world" means aggregate across all partners
+        aggregate_data = to_country == "world"
         
-        # Build parameters list in order
         params = []
         
-        if aggregate_from:
-            # Aggregated query
-            select_clause = """
-            SELECT 
-                product as product_code,
-                product_description,
-                year,
-                'World' as partner,
-                'World' as partner_name,
-                ? as trade_flow,
-                SUM(value) as value,
-                SUM(quantity) as quantity,
-                't' as unit
-            """
-            params.append(trade_flow_value)
-            group_clause = "GROUP BY product, product_description, year"
+        if aggregate_data:
+            # Aggregated query - sum across all partners for the specified country
+            if trade_type == "exports":
+                # For exports to world: sum all importers for the exporting country
+                select_clause = """
+                SELECT 
+                    CAST(product AS VARCHAR) as product_code,
+                    year,
+                    'World' as partner,
+                    ? as trade_flow,
+                    SUM(value) as value,
+                    SUM(quantity) as quantity,
+                    'kg' as unit
+                """
+                group_clause = "GROUP BY product, year"
+            else:
+                # For imports from world: sum all exporters to the importing country  
+                select_clause = """
+                SELECT 
+                    CAST(product AS VARCHAR) as product_code,
+                    year,
+                    'World' as partner,
+                    ? as trade_flow,
+                    SUM(value) as value,
+                    SUM(quantity) as quantity,
+                    'kg' as unit
+                """
+                group_clause = "GROUP BY product, year"
+                
+            params.append(trade_type)
+            
         else:
-            # Individual records
+            # Individual records - show specific trade flows
             if trade_type == "exports":
                 partner_field = "importer"
-                partner_name_field = "importer_name"
             else:
-                partner_field = "exporter" 
-                partner_name_field = "exporter_name"
+                partner_field = "exporter"
                 
             select_clause = f"""
             SELECT 
-                product as product_code,
-                product_description,
+                CAST(product AS VARCHAR) as product_code,
                 year,
-                {partner_field} as partner,
-                {partner_name_field} as partner_name,
+                CAST({partner_field} AS VARCHAR) as partner,
                 ? as trade_flow,
                 value as value,
                 quantity as quantity,
-                't' as unit
+                'kg' as unit  
             """
-            params.append(trade_flow_value)
+            params.append(trade_type)
             group_clause = ""
         
         # Build WHERE conditions
         where_conditions = []
         
-        # Year filter
+        # Year filter  
         where_conditions.append("year BETWEEN ? AND ?")
         params.extend([year_from, year_to])
         
         # Product codes
         product_placeholders = ",".join(["?" for _ in product_list])
-        where_conditions.append(f"product IN ({product_placeholders})")
+        where_conditions.append(f"CAST(product AS VARCHAR) IN ({product_placeholders})")
         params.extend(product_list)
         
-        # Country filters
-        if from_country not in ["everywhere", "world"]:
-            where_conditions.append("exporter = ?")
-            params.append(from_country)
+        if trade_type == "exports":
+            # For exports: from_country = exporter, to_country = importer
+            # Example: UK exports to USA → from_country=826, to_country=840
+            # Query: exporter=826 AND importer=840
+            
+            if from_country not in ["everywhere", "world"] and from_country_list:
+                from_placeholders = ",".join(["?" for _ in from_country_list])
+                where_conditions.append(f"CAST(exporter AS VARCHAR) IN ({from_placeholders})")
+                params.extend(from_country_list)
+            
+            if not aggregate_data and to_country not in ["everywhere", "world"] and to_country_list:
+                to_placeholders = ",".join(["?" for _ in to_country_list])
+                where_conditions.append(f"CAST(importer AS VARCHAR) IN ({to_placeholders})")
+                params.extend(to_country_list)
+                
+        elif trade_type == "imports":
+            # For imports: from_country = exporter (origin), to_country = importer (destination)  
+            # Example: UK imports from USA → from_country=840, to_country=826
+            # Query: exporter=840 AND importer=826
+            
+            if from_country not in ["everywhere", "world"] and from_country_list:
+                from_placeholders = ",".join(["?" for _ in from_country_list])
+                where_conditions.append(f"CAST(exporter AS VARCHAR) IN ({from_placeholders})")
+                params.extend(from_country_list)
+            
+            if not aggregate_data and to_country not in ["everywhere", "world"] and to_country_list:
+                to_placeholders = ",".join(["?" for _ in to_country_list])
+                where_conditions.append(f"CAST(importer AS VARCHAR) IN ({to_placeholders})")
+                params.extend(to_country_list)
         
-        if to_country not in ["everywhere", "world"]:
-            where_conditions.append("importer = ?")
-            params.append(to_country)
+        else:  # trade_type == "all"
+            # For "all": include both import and export flows
+            if from_country not in ["everywhere", "world"] and from_country_list:
+                from_placeholders = ",".join(["?" for _ in from_country_list])
+                where_conditions.append(f"(CAST(exporter AS VARCHAR) IN ({from_placeholders}) OR CAST(importer AS VARCHAR) IN ({from_placeholders}))")
+                params.extend(from_country_list * 2)  # Need params twice for OR condition
+            
+            if not aggregate_data and to_country not in ["everywhere", "world"] and to_country_list:
+                to_placeholders = ",".join(["?" for _ in to_country_list])
+                where_conditions.append(f"(CAST(importer AS VARCHAR) IN ({to_placeholders}) OR CAST(exporter AS VARCHAR) IN ({to_placeholders}))")
+                params.extend(to_country_list * 2)  # Need params twice for OR condition
         
-                # Complete queries
+        # Complete queries
         base_from = "FROM 'data/BACI/baci_hs17_2017_2022.parquet'"
-        where_clause = f"WHERE {' AND '.join(where_conditions)}"
+        where_clause = f"WHERE {' AND '.join(where_conditions)}" if where_conditions else ""
         
         # Count query
         if group_clause:
             count_query = f"""
             SELECT COUNT(*) as total FROM (
                 SELECT 1 {base_from} {where_clause} {group_clause}
-            )
+            ) subq
             """
-            count_params = list(params)
+            #count_params = params[1:]
         else:
             count_query = f"SELECT COUNT(*) as total {base_from} {where_clause}"
-            # Remove the trade_flow param for count if not grouped
-            count_params = list(params)
-            # Remove the first param (trade_flow) for count query if not grouped
-            # because it's only used in SELECT, not WHERE
-            if count_params:
-                count_params = count_params[1:]
+        
+        # Remove trade_flow parameter for count query (it's only used in SELECT)
+        count_params = params[1:]
         
         # Data query
         offset = (page - 1) * page_size
@@ -421,20 +492,26 @@ async def query_trade_data(
         
         conn.close()
         
-        # Convert results
-        data = [
-            TradeRecord(
-                product_code=str(row[0]),
-                product=str(row[1]),
-                year=row[2],
-                partner=str(row[4]),  # partner_name (human readable)
-                trade_flow=row[5],
-                value=float(row[6]) if row[6] else 0.0,
-                quantity=float(row[7]) if row[7] else 0.0,
-                unit=row[8]
-            )
-            for row in data_result
-        ]
+        data = []
+        for row in data_result:
+            try:
+                product_code = str(row[0]) if row[0] is not None else ""
+                product_description = get_product_description(product_code)
+                
+                trade_record = TradeRecord(
+                    product_code=product_code,
+                    product=product_description,  # Use the looked-up description
+                    year=int(row[1]) if row[1] is not None else 0,
+                    partner=str(row[2]) if row[2] is not None else "",
+                    trade_flow=str(row[3]) if row[3] is not None else "",
+                    value=float(row[4]) if row[4] is not None else 0.0,
+                    quantity=float(row[5]) if row[5] is not None else 0.0,
+                    unit=str(row[6]) if row[6] is not None else "kg"
+                )
+                data.append(trade_record)
+            except (IndexError, ValueError, TypeError) as e:
+                print(f"Error converting row {row}: {e}")
+                continue
         
         # Time the query for performance analysis
         execution_time = (datetime.now() - start_time).total_seconds() * 1000
