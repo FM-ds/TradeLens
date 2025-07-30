@@ -31,33 +31,33 @@ with open("data/shared/HS6_products.json", "r") as f:
 with open("data/shared/countries.json", "r") as f:
     COUNTRIES = json.load(f)
 
-# Function to get product description
-def get_product_description(product_code: str) -> str:
-    """Get product description from HS6_products.json"""
-    try:
-        # Debug: Check the structure of PRODUCTS
-        if isinstance(PRODUCTS, dict):
-            # If PRODUCTS is a dictionary with categories
-            for category, products in PRODUCTS.items():
-                if isinstance(products, dict) and product_code in products:
-                    return products[product_code]
-        elif isinstance(PRODUCTS, list):
-            # If PRODUCTS is a list of objects
-            for item in PRODUCTS:
-                if isinstance(item, dict):
-                    # Check if this item has the product code
-                    if item.get('code') == product_code:
-                        return item.get('name', item.get('description', f"Product {product_code}"))
-        else:
-            # If PRODUCTS is a flat dictionary
-            if product_code in PRODUCTS:
-                return PRODUCTS[product_code]
+# # Function to get product description
+# def get_product_description(product_code: str) -> str:
+#     """Get product description from HS6_products.json"""
+#     try:
+#         # Debug: Check the structure of PRODUCTS
+#         if isinstance(PRODUCTS, dict):
+#             # If PRODUCTS is a dictionary with categories
+#             for category, products in PRODUCTS.items():
+#                 if isinstance(products, dict) and product_code in products:
+#                     return products[product_code]
+#         elif isinstance(PRODUCTS, list):
+#             # If PRODUCTS is a list of objects
+#             for item in PRODUCTS:
+#                 if isinstance(item, dict):
+#                     # Check if this item has the product code
+#                     if item.get('code') == product_code:
+#                         return item.get('name', item.get('description', f"Product {product_code}"))
+#         else:
+#             # If PRODUCTS is a flat dictionary
+#             if product_code in PRODUCTS:
+#                 return PRODUCTS[product_code]
         
-        return f"Product {product_code}"
+#         return f"Product {product_code}"
         
-    except Exception as e:
-        print(f"Error in get_product_description for code {product_code}: {e}")
-        return f"Product {product_code}"
+    # except Exception as e:
+    #     print(f"Error in get_product_description for code {product_code}: {e}")
+    #     return f"Product {product_code}"
 
 # Load embeddings with metadata - organized by product type
 EMBEDDINGS_DATA = {
@@ -353,6 +353,7 @@ async def query_trade_data(
                 select_clause = """
                 SELECT 
                     CAST(product AS VARCHAR) as product_code,
+                    ANY_VALUE(product_description) as product_description,
                     year,
                     'World' as partner,
                     ? as trade_flow,
@@ -366,6 +367,7 @@ async def query_trade_data(
                 select_clause = """
                 SELECT 
                     CAST(product AS VARCHAR) as product_code,
+                    ANY_VALUE(product_description) as product_description,
                     year,
                     'World' as partner,
                     ? as trade_flow,
@@ -387,6 +389,7 @@ async def query_trade_data(
             select_clause = f"""
             SELECT 
                 CAST(product AS VARCHAR) as product_code,
+                product_description,
                 year,
                 CAST({partner_field} AS VARCHAR) as partner,
                 ? as trade_flow,
@@ -496,17 +499,17 @@ async def query_trade_data(
         for row in data_result:
             try:
                 product_code = str(row[0]) if row[0] is not None else ""
-                product_description = get_product_description(product_code)
+                product_description = str(row[1]) if row[1] is not None else f"Product {product_code}"
                 
                 trade_record = TradeRecord(
                     product_code=product_code,
-                    product=product_description,  # Use the looked-up description
-                    year=int(row[1]) if row[1] is not None else 0,
-                    partner=str(row[2]) if row[2] is not None else "",
-                    trade_flow=str(row[3]) if row[3] is not None else "",
-                    value=float(row[4]) if row[4] is not None else 0.0,
-                    quantity=float(row[5]) if row[5] is not None else 0.0,
-                    unit=str(row[6]) if row[6] is not None else "kg"
+                    product=product_description,
+                    year=int(row[2]) if row[2] is not None else 0, 
+                    partner=str(row[3]) if row[3] is not None else "",
+                    trade_flow=str(row[4]) if row[4] is not None else "",
+                    value=float(row[5]) if row[5] is not None else 0.0,
+                    quantity=float(row[6]) if row[6] is not None else 0.0,
+                    unit=str(row[7]) if row[7] is not None else "kg" 
                 )
                 data.append(trade_record)
             except (IndexError, ValueError, TypeError) as e:
