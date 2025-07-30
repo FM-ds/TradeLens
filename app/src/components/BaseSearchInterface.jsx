@@ -102,30 +102,32 @@ const BaseSearchInterface = ({
         </div>
       </div>
 
-      {/* Trade Direction */}
-      <div>
-        <h4 className="text-xl text-gray-400 mb-4">Looking for...</h4>
-        <div className="flex gap-4">
-          {config.query.tradeTypeOptions.map((option) => (
-            <button
-              key={option}
-              onClick={() => onTradeTypeChange(option)}
-              disabled={disabled}
-              className={`px-6 py-3 rounded-full font-medium text-base transition-colors ${
-                tradeType === option
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-              } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              {option.replace('Trade: ', '')}
-            </button>
-          ))}
+      {/* Trade Direction - only show if trade type options exist */}
+      {config.query.tradeTypeOptions && config.query.tradeTypeOptions.length > 0 && (
+        <div>
+          <h4 className="text-xl text-gray-400 mb-4">Looking for...</h4>
+          <div className="flex gap-4">
+            {config.query.tradeTypeOptions.map((option) => (
+              <button
+                key={option}
+                onClick={() => onTradeTypeChange(option)}
+                disabled={disabled}
+                className={`px-6 py-3 rounded-full font-medium text-base transition-colors ${
+                  tradeType === option
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                {option.replace('Trade: ', '')}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* From/To Countries */}
       <div>
-        <h4 className="text-xl text-gray-400 mb-4">In Location...</h4>
+        <h4 className="text-xl text-gray-400 mb-4">Location...</h4>
         <div className="flex items-end gap-6">
           {/* From Country */}
           <div className="relative flex-1">
@@ -152,7 +154,7 @@ const BaseSearchInterface = ({
                 onFocus={() => onShowFromCountrySuggestions(true)}
                 onBlur={() => onShowFromCountrySuggestions(false)}
                 className="w-full bg-transparent text-white text-lg placeholder-gray-400 focus:outline-none border-b-2 border-gray-600 focus:border-blue-500 transition-colors py-3"
-                placeholder="Add from country..."
+                placeholder="Add exporter country..."
                 disabled={disabled}
               />
               {/* From Country Suggestions */}
@@ -176,7 +178,7 @@ const BaseSearchInterface = ({
           </div>
 
           <div className="text-gray-400 text-lg pb-3">
-            {tradeType === 'Trade: Exports' ? 'to' : 'from'}
+            to
           </div>
 
           {/* To Country */}
@@ -204,7 +206,7 @@ const BaseSearchInterface = ({
                 onFocus={() => onShowToCountrySuggestions(true)}
                 onBlur={() => onShowToCountrySuggestions(false)}
                 className="w-full bg-transparent text-white text-lg placeholder-gray-400 focus:outline-none border-b-2 border-gray-600 focus:border-blue-500 transition-colors py-3"
-                placeholder="Add to country..."
+                placeholder="Add importer country..."
                 disabled={disabled}
               />
               {/* To Country Suggestions */}

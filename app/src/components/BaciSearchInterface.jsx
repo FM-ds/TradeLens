@@ -24,9 +24,9 @@ const BaciSearchInterface = ({
   const [toCountrySearch, setToCountrySearch] = useState('');
   const [showToCountrySuggestions, setShowToCountrySuggestions] = useState(false);
   
-  const [tradeType, setTradeType] = useState(initialState.tradeType || 'Trade: Imports');
+  const [tradeType, setTradeType] = useState(initialState.tradeType || 'exports');
   const [startYear, setStartYear] = useState(initialState.startYear || '2020');
-  const [endYear, setEndYear] = useState(initialState.endYear || '2024');
+  const [endYear, setEndYear] = useState(initialState.endYear || '2022');
 
   // API calls
   useEffect(() => {

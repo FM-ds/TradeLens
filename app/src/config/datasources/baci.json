@@ -24,8 +24,8 @@
     "defaultLimit": 10
   },
   "query": {
-    "tradeTypeOptions": ["Trade: All", "Trade: Exports", "Trade: Imports"],
-    "defaultTradeType": "Trade: Imports",
+    "tradeTypeOptions": [],
+    "defaultTradeType": "exports",
     "defaultStartYear": "2020",
     "defaultEndYear": "2022",
     "yearRange": {

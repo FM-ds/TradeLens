@@ -71,7 +71,9 @@ const TradeDataPlatform = () => {
     
     if (query.dataset === 'baci') {
       // BACI query display
-      const direction = query.tradeType.replace('Trade: ', '');
+      const direction = query.tradeType.includes('Trade:') 
+        ? query.tradeType.replace('Trade: ', '')
+        : query.tradeType;
       const from = query.fromCountries.join(', ') || 'Any';
       const to = query.toCountries.join(', ') || 'Any';
       
