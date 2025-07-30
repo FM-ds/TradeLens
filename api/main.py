@@ -481,7 +481,7 @@ async def query_trade_data(
                     trade_flow=str(row[4]) if row[4] is not None else "",
                     value=float(row[5]) if row[5] is not None else 0.0,
                     quantity=float(row[6]) if row[6] is not None else 0.0,
-                    unit=str(row[7]) if row[7] is not None else "kg" 
+                    unit=str(row[7]) if row[7] is not None else "KG Tonnes" 
                 )
                 data.append(trade_record)
             except (IndexError, ValueError, TypeError) as e:
