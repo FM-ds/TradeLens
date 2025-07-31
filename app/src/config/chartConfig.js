@@ -288,19 +288,8 @@ export const createChartSpecWithAPI = (chartType, apiUrl, config, selectedMetric
     {
       aggregate: [{ op: "sum", field: selectedMetric, as: "value" }],
       groupby: ["year", groupBy.field]
-    },
-    // Limit to top 10 series by total value to keep chart readable
-    {
-      window: [{ op: "sum", field: "value", as: "total_by_group" }],
-      groupby: [groupBy.field]
-    },
-    {
-      window: [{ op: "rank", as: "rank" }],
-      sort: [{ field: "total_by_group", order: "descending" }]
-    },
-    {
-      filter: "datum.rank <= 10"
     }
+    // Rank filter removed - show all data instead of limiting to top 10
   ];
 
   // Update field references in the spec

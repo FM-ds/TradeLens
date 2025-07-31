@@ -6,132 +6,72 @@ import {
   createChartSpecWithAPI, 
   formatValue 
 } from '../config/chartConfig';
+import useDatasetConfig from '../hooks/useDatasetConfig';
 import useDatasetApi from '../hooks/useDatasetApi';
 
 const DataVisualization = ({ 
   data = [], 
   dataset = 'baci', 
-  query = null 
+  query = null,
+  apiUrl = null
 }) => {
-  const config = getChartConfig(dataset);
+  const chartConfig = getChartConfig(dataset);
+  const { config } = useDatasetConfig(dataset);
   const api = useDatasetApi(config);
   
   // For BACI, adjust groupBy options based on trade direction
   const getAvailableGroupByFields = () => {
     if (dataset === 'baci' && query?.tradeType) {
-      const baseFields = [...config.groupByFields];
+      const baseFields = [...chartConfig.groupByFields];
       
       // Since API returns codes, we'll show codes for now
       // TODO: Later can add lookup functionality to show names
       return baseFields;
     }
-    return config.groupByFields;
+    return chartConfig.groupByFields;
   };
 
   const availableGroupByFields = getAvailableGroupByFields();
   
   // Chart controls state
   const [selectedChartType, setSelectedChartType] = useState(CHART_TYPES.LINE);
-  const [selectedMetric, setSelectedMetric] = useState(config.defaultMetric);
-  const [selectedGroupBy, setSelectedGroupBy] = useState(config.defaultGroupBy);
+  const [selectedMetric, setSelectedMetric] = useState(chartConfig.defaultMetric);
+  const [selectedGroupBy, setSelectedGroupBy] = useState(chartConfig.defaultGroupBy);
 
   // Build API URL for direct data fetching
-  const apiUrl = useMemo(() => {
-    if (!query || !api) return null;
-
-    const baseUrl = 'http://127.0.0.1:8000/api';
+  const chartApiUrl = useMemo(() => {
+    console.log('DataVisualization: Received apiUrl:', apiUrl);
+    if (!apiUrl) return null;
     
-    if (dataset === 'baci') {
-      const tradeType = query.tradeType.toLowerCase().replace('trade: ', '');
-      const productCodes = query.products.map(p => p.code || p.product_code).join(',');
-      
-      // Handle country codes/names properly - convert names to codes for API
-      let fromCountry = 'everywhere';
-      let toCountry = 'everywhere';
-      
-      if (query.fromCountries && query.fromCountries.length > 0) {
-        const countryCodes = query.fromCountries.map(c => {
-          if (typeof c === 'string') {
-            // Handle string values like "everywhere" or "world"
-            if (c.toLowerCase() === 'everywhere') return 'everywhere';
-            if (c.toLowerCase() === 'world') return 'world';
-            // Fallback to name->code lookup for legacy data
-            return api.getCountryCodeByName(c);
-          }
-          // Extract code from country object
-          return c.code || c.country_code || 'everywhere';
-        });
-        fromCountry = countryCodes.join(',');
-      }
-      
-      if (query.toCountries && query.toCountries.length > 0) {
-        const countryCodes = query.toCountries.map(c => {
-          if (typeof c === 'string') {
-            // Handle string values like "everywhere" or "world"
-            if (c.toLowerCase() === 'everywhere') return 'everywhere';
-            if (c.toLowerCase() === 'world') return 'world';
-            // Fallback to name->code lookup for legacy data
-            return api.getCountryCodeByName(c);
-          }
-          // Extract code from country object
-          return c.code || c.country_code || 'everywhere';
-        });
-        toCountry = countryCodes.join(',');
-      }
-      
-      const params = new URLSearchParams({
-        trade_type: tradeType,
-        product_codes: productCodes,
-        from_country: fromCountry,
-        to_country: toCountry,
-        year_from: query.startYear,
-        year_to: query.endYear,
-        page: 1,
-        page_size: 1000 // Large page size to get comprehensive data
-      });
-      
-      const url = `${baseUrl}/trade-query?${params.toString()}`;
-      console.log('DataVisualization: Built API URL:', url);
-      console.log('DataVisualization: Original countries:', { from: query.fromCountries, to: query.toCountries });
-      console.log('DataVisualization: Mapped to codes:', { from: fromCountry, to: toCountry });
-      return url;
-    } else if (dataset === 'prodcom') {
-      const productCodes = query.products.map(p => p.code || p.product_code).join(',');
-      
-      const params = new URLSearchParams({
-        product_codes: productCodes,
-        year_from: query.startYear,
-        year_to: query.endYear,
-        measure: query.measureType || 'Value',
-        page: 1,
-        page_size: 1000
-      });
-      
-      const url = `${baseUrl}/prodcom-query?${params.toString()}`;
-      console.log('DataVisualization: Built API URL:', url);
-      return url;
-    }
+    // Use the stored working API URL and just add a large page size for comprehensive data
+    const url = new URL(apiUrl);
+    url.searchParams.set('page', '1');
+    url.searchParams.set('page_size', '1000');
     
-    return null;
-  }, [query, dataset, api]);
+    const finalUrl = url.toString();
+    console.log('DataVisualization: Using stored API URL:', finalUrl);
+    return finalUrl;
+  }, [apiUrl]);
 
   // Create Vega-Lite specification with API data source
   const vegaSpec = useMemo(() => {
-    if (!apiUrl) {
+    if (!chartApiUrl) {
       console.log('DataVisualization: No API URL available');
       return null;
     }
 
-    console.log('DataVisualization: Using API URL:', apiUrl);
+    console.log('DataVisualization: Using API URL:', chartApiUrl);
     console.log('DataVisualization: Selected metric:', selectedMetric);
     console.log('DataVisualization: Selected groupBy:', selectedGroupBy);
     
-    const spec = createChartSpecWithAPI(selectedChartType, apiUrl, config, selectedMetric, selectedGroupBy, availableGroupByFields);
+    const spec = createChartSpecWithAPI(selectedChartType, chartApiUrl, chartConfig, selectedMetric, selectedGroupBy, availableGroupByFields);
     console.log('DataVisualization: Generated Vega spec:', spec);
     
     return spec;
-  }, [apiUrl, selectedChartType, config, selectedMetric, selectedGroupBy, availableGroupByFields]);  // Get metric info for display
-  const metricInfo = config.availableMetrics.find(m => m.value === selectedMetric);
+  }, [chartApiUrl, selectedChartType, chartConfig, selectedMetric, selectedGroupBy, availableGroupByFields]);
+
+  // Get metric info for display
+  const metricInfo = chartConfig.availableMetrics.find(m => m.value === selectedMetric);
   const groupByInfo = availableGroupByFields.find(g => g.value === selectedGroupBy);
 
   if (!query) {
@@ -191,7 +131,7 @@ const DataVisualization = ({
               onChange={(e) => setSelectedMetric(e.target.value)}
               className="bg-gray-700 border border-gray-600 rounded px-3 py-1 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              {config.availableMetrics.map((metric) => (
+              {chartConfig.availableMetrics.map((metric) => (
                 <option key={metric.value} value={metric.value}>
                   {metric.label}
                 </option>

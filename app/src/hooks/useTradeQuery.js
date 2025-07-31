@@ -10,6 +10,7 @@ const useTradeQuery = (query, currentPage = 1, rowsPerPage = 10) => {
   const [tradeDataTotal, setTradeDataTotal] = useState(0);
   const [tradeDataTotalPages, setTradeDataTotalPages] = useState(1);
   const [tradeDataLoading, setTradeDataLoading] = useState(false);
+  const [apiUrl, setApiUrl] = useState(''); // Store the working API URL
 
   useEffect(() => {
     if (!query || !config) {
@@ -33,15 +34,27 @@ const useTradeQuery = (query, currentPage = 1, rowsPerPage = 10) => {
           
           // Map countries to codes, handling special cases
           const fromCountry = query.fromCountries.map(c => {
-            if (c.toLowerCase() === 'everywhere') return 'everywhere';
-            if (c.toLowerCase() === 'world') return 'world';
-            return api.getCountryCodeByName(c);
+            if (typeof c === 'string') {
+              // Handle string values like "everywhere" or "world"
+              if (c.toLowerCase() === 'everywhere') return 'everywhere';
+              if (c.toLowerCase() === 'world') return 'world';
+              // Fallback to name->code lookup for legacy data
+              return api.getCountryCodeByName(c);
+            }
+            // Extract code from country object
+            return c.code || c.country_code || 'everywhere';
           }).join(',');
           
           const toCountry = query.toCountries.map(c => {
-            if (c.toLowerCase() === 'everywhere') return 'everywhere';
-            if (c.toLowerCase() === 'world') return 'world';
-            return api.getCountryCodeByName(c);
+            if (typeof c === 'string') {
+              // Handle string values like "everywhere" or "world" 
+              if (c.toLowerCase() === 'everywhere') return 'everywhere';
+              if (c.toLowerCase() === 'world') return 'world';
+              // Fallback to name->code lookup for legacy data
+              return api.getCountryCodeByName(c);
+            }
+            // Extract code from country object
+            return c.code || c.country_code || 'everywhere';
           }).join(',');
 
           queryParams = {
@@ -73,6 +86,18 @@ const useTradeQuery = (query, currentPage = 1, rowsPerPage = 10) => {
         setTradeData(result.data || []);
         setTradeDataTotal(result.total_records || 0);
         setTradeDataTotalPages(result.total_pages || 1);
+        
+        // Store the working API URL for reuse (remove pagination params)
+        if (result.apiUrl) {
+          const url = new URL(result.apiUrl);
+          url.searchParams.delete('page');
+          url.searchParams.delete('page_size');
+          const cleanUrl = url.toString();
+          console.log('useTradeQuery: Storing API URL:', cleanUrl);
+          setApiUrl(cleanUrl);
+        } else {
+          console.log('useTradeQuery: No apiUrl in result:', result);
+        }
       } catch (error) {
         console.error('Failed to execute trade query:', error);
         setTradeData([]);
@@ -90,7 +115,8 @@ const useTradeQuery = (query, currentPage = 1, rowsPerPage = 10) => {
     tradeData,
     tradeDataTotal,
     tradeDataTotalPages,
-    tradeDataLoading
+    tradeDataLoading,
+    apiUrl // Return the working API URL
   };
 };
 

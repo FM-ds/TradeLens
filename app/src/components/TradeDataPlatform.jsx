@@ -25,11 +25,13 @@ const TradeDataPlatform = () => {
 
   // Active query and trade data
   const activeQuery = queries.find(q => q.id === activeQueryId);
-  const { tradeData, tradeDataTotal, tradeDataTotalPages, tradeDataLoading } = useTradeQuery(
+  const { tradeData, tradeDataTotal, tradeDataTotalPages, tradeDataLoading, apiUrl } = useTradeQuery(
     activeQuery,
     currentPage,
     rowsPerPage
   );
+
+  console.log('TradeDataPlatform: apiUrl from useTradeQuery:', apiUrl);
 
   // API hooks for CSV download
   const { config } = useDatasetConfig(activeQuery?.dataset);
@@ -250,6 +252,7 @@ const TradeDataPlatform = () => {
                   data={tradeData}
                   dataset={activeQuery?.dataset || 'baci'}
                   query={activeQuery}
+                  apiUrl={apiUrl}
                 />
                 <GeographicMapPanel />
               </div>
