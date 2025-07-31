@@ -1,3 +1,3 @@
 {
-  "apiBase": "http://ec2-3-8-87-255.eu-west-2.compute.amazonaws.com:8000"
+  "apiBase": "https://api.tradelens.uk"
 }
