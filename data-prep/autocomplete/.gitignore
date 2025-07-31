@@ -1,0 +1,4 @@
+# Embeddings and data files
+country_embeddings_dump.json
+product_embeddings_dump.json
+*.parquet
