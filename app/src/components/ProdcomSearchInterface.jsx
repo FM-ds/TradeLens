@@ -158,7 +158,7 @@ const ProdcomSearchInterface = ({
                 type="text"
                 value={productSearch}
                 onChange={(e) => handleProductSearch(e.target.value)}
-                placeholder={`Search ${productTypeFilter.toLowerCase()}s by code, name, keywords...`}
+                placeholder={`Search ${productTypeFilter.toLowerCase() === 'industry' ? 'industries' : productTypeFilter.toLowerCase() + 's'} by code, name, keywords...`}
                 className="flex-1 bg-transparent text-white text-xl placeholder-gray-400 focus:outline-none min-w-64 border-none"
                 disabled={disabled}
               />

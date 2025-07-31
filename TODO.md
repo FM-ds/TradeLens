@@ -6,8 +6,8 @@
 
 Z: TODO: A brief covering note on TradeLens. "A tool to query XYZ trade data. 
 
-Z: TODO: Covering note on BACI. "You can choose multiple XYZ. Some data is unavailable..."
-
+~~Z: TODO: Covering note on BACI. "You can choose multiple XYZ. Some data is unavailable..."
+~~
 ~~F: TODO: Change the year dropdown on BACI.
 ~~
 TODO: Change BACI querying from frontend
@@ -20,8 +20,8 @@ TODO: Change BACI querying from frontend
 
 Z: TODO: Test cases 
 
-F: TODO: Fix BACI Data viz, especially wrt everywhere option
-
+~F: TODO: Fix BACI Data viz, especially wrt everywhere option
+~
 F: TODO: BACI dropdowns don't show for a second country until lose focus off and start focus
 
 ~F [BUT relies on Z backend switch]: TODO: Add country names to the table
@@ -33,11 +33,12 @@ F: TODO: Switch embeddings model.
 
 ## PRODCOM
 
-F: TODO: "Industrys" -> "Industries"
+~F: TODO: "Industrys" -> "Industries"
+~
 F: TODO: Support search codes
 
-Z: TODO: Add a prodcom covering note that mentions data supression
-
+~Z: TODO: Add a prodcom covering note that mentions data supression
+~
 F [NOT PRIORITY]: TODO: Not everything has an "average price/other" - handle gracefully?
 
 # SIDEBAR
