@@ -8,6 +8,8 @@ import DataVisualization from './DataVisualization';
 import GeographicMapPanel from './GeographicMapPanel';
 import EmptyState from './EmptyState';
 import useTradeQuery from '../hooks/useTradeQuery';
+import useDatasetConfig from '../hooks/useDatasetConfig';
+import useDatasetApi from '../hooks/useDatasetApi';
 import { downloadCSV as exportCSV } from '../utils/csvExport';
 
 const TradeDataPlatform = () => {
@@ -28,6 +30,10 @@ const TradeDataPlatform = () => {
     currentPage,
     rowsPerPage
   );
+
+  // API hooks for CSV download
+  const { config } = useDatasetConfig(activeQuery?.dataset);
+  const api = useDatasetApi(config);
 
   // Auto-collapse on narrow screens (disabled - keep sidebar expanded by default)
   useEffect(() => {
@@ -71,9 +77,7 @@ const TradeDataPlatform = () => {
     
     if (query.dataset === 'baci') {
       // BACI query display
-      const direction = query.tradeType.includes('Trade:') 
-        ? query.tradeType.replace('Trade: ', '')
-        : query.tradeType;
+      const direction = query.tradeType.replace('Trade: ', '');
       const from = query.fromCountries.join(', ') || 'Any';
       const to = query.toCountries.join(', ') || 'Any';
       
@@ -96,10 +100,73 @@ const TradeDataPlatform = () => {
   const startIndex = (currentPage - 1) * rowsPerPage;
   const endIndex = Math.min(startIndex + rowsPerPage, tradeDataTotal);
 
-  // Universal CSV download function for any dataset
-  const downloadCSV = () => {
-    const dataset = activeQuery?.dataset || 'baci';
-    exportCSV(tradeData, dataset);
+  // Enhanced CSV download function that fetches all data
+  const downloadCSV = async () => {
+    if (!activeQuery || !config || !api) {
+      console.warn('No active query available for CSV export');
+      return;
+    }
+
+    const dataset = activeQuery.dataset || 'baci';
+    
+    try {
+      let queryParams;
+      let result;
+      const largePageSize = 5000; // Large page size to get all data
+
+      if (dataset === 'baci') {
+        // BACI query parameters
+        const tradeType = activeQuery.tradeType.toLowerCase().replace('trade: ', '');
+        const productCodes = activeQuery.products.map(p => p[config.product.codeField]).join(',');
+        
+        // Map countries to codes, handling special cases
+        const fromCountry = activeQuery.fromCountries.map(c => {
+          if (c.toLowerCase() === 'everywhere') return 'everywhere';
+          if (c.toLowerCase() === 'world') return 'world';
+          return api.getCountryCodeByName(c);
+        }).join(',');
+        
+        const toCountry = activeQuery.toCountries.map(c => {
+          if (c.toLowerCase() === 'everywhere') return 'everywhere';
+          if (c.toLowerCase() === 'world') return 'world';
+          return api.getCountryCodeByName(c);
+        }).join(',');
+
+        queryParams = {
+          tradeType,
+          productCodes,
+          fromCountry,
+          toCountry,
+          yearFrom: activeQuery.startYear,
+          yearTo: activeQuery.endYear
+        };
+
+        result = await api.executeTradeQuery(queryParams, 1, largePageSize);
+      } else if (dataset === 'prodcom') {
+        // PRODCOM query parameters
+        const productCodes = activeQuery.products.map(p => p[config.product.codeField]).join(',');
+        
+        queryParams = {
+          productCodes,
+          yearFrom: activeQuery.startYear,
+          yearTo: activeQuery.endYear,
+          measure: activeQuery.measureType
+        };
+
+        result = await api.executeProdcomQuery(queryParams, 1, largePageSize);
+      } else {
+        throw new Error(`Unsupported dataset: ${dataset}`);
+      }
+      
+      // Use the fetched data for CSV export
+      if (result.data && result.data.length > 0) {
+        exportCSV(result.data, dataset);
+      } else {
+        console.warn('No data available for CSV export');
+      }
+    } catch (error) {
+      console.error('Failed to fetch data for CSV export:', error);
+    }
   };
 
   // Pagination handler

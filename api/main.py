@@ -299,7 +299,7 @@ async def query_trade_data(
     year_from: int = Query(2020, ge=2000, le=2024),
     year_to: int = Query(2022, ge=2000, le=2024),
     page: int = Query(1, ge=1),
-    page_size: int = Query(100, ge=10, le=1000)
+    page_size: int = Query(100, ge=10, le=10000)
 ):
     """Returns trade data based on query parameters."""
     
@@ -497,7 +497,7 @@ async def query_prodcom_data(
     year_to: int = Query(2024, ge=2014, le=2024),
     measure: str = Query("Value", regex="^(Value|Volume|Other)$", description="Data measure type"),
     page: int = Query(1, ge=1),
-    page_size: int = Query(100, ge=10, le=1000)
+    page_size: int = Query(100, ge=10, le=10000)
 ):
     """Returns PRODCOM manufacturer sales data based on query parameters."""
     

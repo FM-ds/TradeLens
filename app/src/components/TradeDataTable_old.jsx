@@ -11,9 +11,10 @@ const TradeDataTable = ({
   dataset = 'baci' // Add dataset prop to determine table structure
 }) => {
   // Determine table structure based on dataset
+  const isBaci = dataset === 'baci';
   const isProdcom = dataset === 'prodcom';
   
-  // Define headers and column count based on dataset
+  // Generate headers dynamically based on actual data
   const getHeaders = () => {
     if (isProdcom) {
       return [
@@ -26,29 +27,60 @@ const TradeDataTable = ({
         { label: 'Unit', align: 'left' },
         { label: 'Flag', align: 'left' }
       ];
-    } else if (dataset === 'baci' && tradeData.length > 0) {
-      // Dynamic BACI headers based on the actual data structure
+    } else if (isBaci && tradeData.length > 0) {
+      // Generate headers dynamically from the first data row
       const sampleRow = tradeData[0];
-      const columnKeys = Object.keys(sampleRow);
+      const dynamicHeaders = [];
       
-      // Create headers from the actual data keys with proper formatting
-      return columnKeys.map(key => {
-        const label = key
-          .split('_')
-          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(' ');
-        
-        // Right-align numeric columns
-        const isNumeric = ['value', 'quantity', 'product_code', 'exporter_id', 'importer_id', 'year'].includes(key);
-        
-        return {
-          label,
-          key,
-          align: isNumeric ? 'right' : 'left'
-        };
+      // Define preferred order and formatting for known fields
+      const fieldConfig = {
+        product_code: { label: 'Product Code', align: 'left' },
+        product: { label: 'Product', align: 'left' },
+        year: { label: 'Year', align: 'left' },
+        exporter_name: { label: 'Exporter', align: 'left' },
+        exporter_id: { label: 'Exporter ID', align: 'left' },
+        importer_name: { label: 'Importer', align: 'left' },
+        importer_id: { label: 'Importer ID', align: 'left' },
+        trade_flow: { label: 'Flow', align: 'left' },
+        value: { label: 'Value (USD)', align: 'right' },
+        quantity: { label: 'Quantity', align: 'right' },
+        unit: { label: 'Unit', align: 'left' }
+      };
+      
+      // Add headers for fields that exist in the data
+      Object.keys(sampleRow).forEach(field => {
+        if (fieldConfig[field]) {
+          dynamicHeaders.push({
+            field,
+            label: fieldConfig[field].label,
+            align: fieldConfig[field].align
+          });
+        } else {
+          // For unknown fields, create a default header
+          dynamicHeaders.push({
+            field,
+            label: field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+            align: 'left'
+          });
+        }
       });
+      
+      return dynamicHeaders;
     } else {
-      // Fallback BACI headers (old structure)
+      // Fallback BACI headers
+      return [
+        { field: 'product_code', label: 'Code', align: 'left' },
+        { field: 'product', label: 'Product', align: 'left' },
+        { field: 'year', label: 'Year', align: 'left' },
+        { field: 'exporter_name', label: 'Exporter', align: 'left' },
+        { field: 'importer_name', label: 'Importer', align: 'left' },
+        { field: 'value', label: 'Value (USD)', align: 'right' },
+        { field: 'quantity', label: 'Quantity', align: 'right' }
+      ];
+    }
+  };
+    } else {
+      // BACI headers
       return [
         { label: 'Code', align: 'left' },
         { label: 'Product', align: 'left' },
@@ -92,7 +124,7 @@ const TradeDataTable = ({
             tradeData.map((row, idx) => (
               <tr key={row.id || idx} className="border-b border-gray-700 hover:bg-gray-750">
                 {isProdcom ? (
-                  // PRODCOM row structure (legacy)
+                  // PRODCOM row structure
                   <>
                     <td className="py-2 px-3 text-purple-400 font-mono text-xs">{row.code}</td>
                     <td className="py-2 px-3 text-white max-w-xs truncate text-sm" title={row.description}>{row.description}</td>
@@ -111,53 +143,19 @@ const TradeDataTable = ({
                     <td className="py-2 px-3 text-gray-400 text-xs">{row.flag || ''}</td>
                   </>
                 ) : (
-                  // Dynamic BACI row structure - render all columns
-                  headers.map((header, cellIdx) => {
-                    const key = header.key || header.label.toLowerCase().replace(/ /g, '_');
-                    const value = row[key];
-                    
-                    // Format values based on column type
-                    const formatValue = (val, columnKey) => {
-                      if (val === null || val === undefined) return '';
-                      
-                      if (columnKey === 'value') {
-                        return `$${(val / 1000).toFixed(0)}k`;
-                      } else if (columnKey === 'quantity') {
-                        return val.toFixed(0);
-                      } else if (columnKey === 'product_code') {
-                        return val;
-                      } else {
-                        return String(val);
-                      }
-                    };
-                    
-                    // Determine cell styling based on content
-                    const getCellStyle = (columnKey) => {
-                      if (columnKey === 'product_code') {
-                        return 'text-blue-400 font-mono text-xs';
-                      } else if (columnKey === 'value') {
-                        return 'text-green-400 font-mono text-sm';
-                      } else if (columnKey === 'quantity') {
-                        return 'text-gray-300 font-mono text-xs';
-                      } else if (columnKey === 'product') {
-                        return 'text-white max-w-xs truncate text-sm';
-                      } else if (columnKey.includes('name')) {
-                        return 'text-white text-sm';
-                      } else {
-                        return 'text-gray-300';
-                      }
-                    };
-                    
-                    return (
-                      <td 
-                        key={cellIdx} 
-                        className={`py-2 px-3 ${getCellStyle(key)} ${header.align === 'right' ? 'text-right' : 'text-left'}`}
-                        title={key === 'product' ? value : undefined}
-                      >
-                        {formatValue(value, key)}
-                      </td>
-                    );
-                  })
+                  // BACI row structure  
+                  <>
+                    <td className="py-2 px-3 text-blue-400 font-mono text-xs">{row.product_code}</td>
+                    <td className="py-2 px-3 text-white max-w-xs truncate text-sm" title={row.product}>{row.product}</td>
+                    <td className="py-2 px-3 text-gray-300">{row.year}</td>
+                    <td className="py-2 px-3 text-gray-300">{row.partner}</td>
+                    <td className="py-2 px-3 text-gray-300 text-xs">{row.trade_flow}</td>
+                    <td className="py-2 px-3 text-right text-green-400 font-mono text-sm">${(row.value / 1000).toFixed(0)}k</td>
+                    <td className="py-2 px-3 text-right text-gray-300 font-mono text-xs">
+                      {/* BACI quantities are already in metric tons, show with proper unit */}
+                      {(row.quantity).toFixed(0)} {row.unit}
+                    </td>
+                  </>
                 )}
               </tr>
             ))

@@ -2,21 +2,6 @@
  * Universal CSV export utility for different dataset types
  */
 
-// Dataset configurations for CSV export
-const datasetConfigs = {
-  baci: {
-    headers: ['Product Code', 'Product Name', 'Year', 'Partner', 'Trade Flow', 'Value (USD)', 'Quantity', 'Unit'],
-    fields: ['product_code', 'product', 'year', 'partner', 'trade_flow', 'value', 'quantity', 'unit'],
-    filename: 'trade-data'
-  },
-  prodcom: {
-    headers: ['Code', 'Description', 'Type', 'Year', 'Measure', 'Value', 'Unit', 'Flag'],
-    fields: ['code', 'description', 'type', 'year', 'measure', 'value', 'unit', 'flag'],
-    filename: 'prodcom-data'
-  }
-  // Add more dataset configurations as needed
-};
-
 /**
  * Safely extract and escape field values for CSV
  * @param {Object} row - Data row object
@@ -36,20 +21,30 @@ const getFieldValue = (row, field) => {
 };
 
 /**
- * Generate CSV content from data array
+ * Generate CSV content from data array - dynamically determines structure
  * @param {Array} data - Array of data objects
- * @param {string} dataset - Dataset type (baci, prodcom, etc.)
+ * @param {string} dataset - Dataset type (for filename purposes)
  * @returns {string} - CSV content string
  */
 export const generateCSVContent = (data, dataset = 'baci') => {
   if (!data || data.length === 0) return '';
   
-  const config = datasetConfigs[dataset] || datasetConfigs.baci;
+  // Get headers from the first row of actual data
+  const sampleRow = data[0];
+  const headers = Object.keys(sampleRow);
+  
+  // Create human-readable header labels
+  const headerLabels = headers.map(key => {
+    return key
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  });
   
   const csvContent = [
-    config.headers.join(','),
+    headerLabels.join(','),
     ...data.map(row => 
-      config.fields.map(field => getFieldValue(row, field)).join(',')
+      headers.map(field => getFieldValue(row, field)).join(',')
     )
   ].join('\n');
   
@@ -59,7 +54,7 @@ export const generateCSVContent = (data, dataset = 'baci') => {
 /**
  * Download CSV file from data array
  * @param {Array} data - Array of data objects
- * @param {string} dataset - Dataset type (baci, prodcom, etc.)
+ * @param {string} dataset - Dataset type (for filename purposes)
  * @param {string} customFilename - Optional custom filename (without extension)
  */
 export const downloadCSV = (data, dataset = 'baci', customFilename = null) => {
@@ -68,34 +63,37 @@ export const downloadCSV = (data, dataset = 'baci', customFilename = null) => {
     return;
   }
   
-  const config = datasetConfigs[dataset] || datasetConfigs.baci;
   const csvContent = generateCSVContent(data, dataset);
+  
+  // Create filename based on dataset or custom name
+  const baseFilename = customFilename || `${dataset}-data`;
   
   // Create and download the file
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = window.URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `${customFilename || config.filename}-${Date.now()}.csv`;
+  a.download = `${baseFilename}-${Date.now()}.csv`;
   a.click();
   window.URL.revokeObjectURL(url);
 };
 
 /**
- * Add a new dataset configuration
+ * Add a new dataset configuration (legacy function - kept for compatibility)
  * @param {string} datasetId - Dataset identifier
  * @param {Object} config - Dataset configuration object
  */
 export const addDatasetConfig = (datasetId, config) => {
-  datasetConfigs[datasetId] = config;
+  console.warn('addDatasetConfig is deprecated - CSV export now works dynamically with any data structure');
 };
 
 /**
- * Get available dataset configurations
- * @returns {Object} - All available dataset configurations
+ * Get available dataset configurations (legacy function - kept for compatibility)
+ * @returns {Object} - Empty object as configs are now dynamic
  */
 export const getDatasetConfigs = () => {
-  return { ...datasetConfigs };
+  console.warn('getDatasetConfigs is deprecated - CSV export now works dynamically with any data structure');
+  return {};
 };
 
 export default downloadCSV;
