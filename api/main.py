@@ -184,16 +184,41 @@ def embedding_autocomplete(
         if embedding_matrix.size == 0:
             return []
     
-    # Perform similarity search
-    search_emb = EMBEDDING_MODEL.encode([search_term])[0]
-    norms = np.linalg.norm(embedding_matrix, axis=1) * np.linalg.norm(search_emb)
-    scores = np.dot(embedding_matrix, search_emb) / norms
-    top_idx = np.argsort(scores)[::-1][:limit]
+    # Check if search term is numeric (code search) - allow digits, spaces, and dots
+    is_code_search = search_term.replace(" ", "").replace(".", "").isdigit()
     
-    return [
-        {k: v for k, v in items_data[i].items() if k != "embedding"}
-        for i in top_idx
-    ]
+    if is_code_search:
+        # Code-based substring search
+        matching_items = []
+        search_clean = search_term.replace(" ", "").replace(".", "")
+        
+        for item in items_data:
+            # Get the code field - try common code field names
+            code = str(item.get('code', item.get('product_code', item.get('country_code', ''))))
+            code_clean = code.replace(" ", "").replace(".", "")
+            
+            # Check if search term is a substring of the code
+            if search_clean in code_clean:
+                matching_items.append({k: v for k, v in item.items() if k != "embedding"})
+        
+        # Sort by code length (shorter codes first) and then by code value
+        matching_items.sort(key=lambda x: (
+            len(str(x.get('code', x.get('product_code', x.get('country_code', ''))))),
+            str(x.get('code', x.get('product_code', x.get('country_code', ''))))
+        ))
+        
+        return matching_items[:limit]
+    else:
+        # Semantic similarity search for text-based queries
+        search_emb = EMBEDDING_MODEL.encode([search_term])[0]
+        norms = np.linalg.norm(embedding_matrix, axis=1) * np.linalg.norm(search_emb)
+        scores = np.dot(embedding_matrix, search_emb) / norms
+        top_idx = np.argsort(scores)[::-1][:limit]
+        
+        return [
+            {k: v for k, v in items_data[i].items() if k != "embedding"}
+            for i in top_idx
+        ]
 
 #### 1. Products autocomplete endpoint
 @app.get("/api/products")
