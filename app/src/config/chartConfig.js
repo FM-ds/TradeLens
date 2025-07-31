@@ -19,10 +19,11 @@ export const CHART_CONFIGS = {
     defaultMetric: 'value',
     dateField: 'year',
     groupByFields: [
-      { value: 'product', label: 'Product', field: 'product' }, // API returns product codes in 'product' field
-      { value: 'partner', label: 'Partner Country', field: 'partner' } // API returns country codes in 'partner' field
+      { value: 'product', label: 'Product', field: 'product_code' }, // API returns product codes in 'product_code' field
+      { value: 'exporter', label: 'Exporter Country', field: 'exporter_name' }, // API returns exporter names in 'exporter_name' field
+      { value: 'importer', label: 'Importer Country', field: 'importer_name' } // API returns importer names in 'importer_name' field
     ],
-    defaultGroupBy: 'product',
+    defaultGroupBy: 'importer',
     timeRange: { min: 2017, max: 2022 },
     colors: ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316']
   },
@@ -260,7 +261,80 @@ export const getChartConfig = (dataset) => {
   return CHART_CONFIGS[dataset] || CHART_CONFIGS.baci;
 };
 
-// Helper function to create a chart specification
+// Helper function to create a chart specification with API data source
+export const createChartSpecWithAPI = (chartType, apiUrl, config, selectedMetric, selectedGroupBy, availableGroupByFields) => {
+  const baseSpec = BASE_SPECS[chartType];
+  if (!baseSpec) return null;
+
+  const metric = config.availableMetrics.find(m => m.value === selectedMetric) || config.availableMetrics[0];
+  const groupBy = availableGroupByFields.find(g => g.value === selectedGroupBy) || availableGroupByFields[0];
+
+  // Create a deep copy of the base spec
+  const spec = JSON.parse(JSON.stringify(baseSpec));
+  
+  // Set up API data source with transformations
+  spec.data = {
+    url: apiUrl,
+    format: { type: "json", property: "data" }, // Extract the data array from the API response
+  };
+
+  // Add data transformations to group and aggregate the data
+  spec.transform = [
+    // Filter out zero values
+    {
+      filter: `datum.${selectedMetric} > 0`
+    },
+    // Group by year and grouping field, summing the metric
+    {
+      aggregate: [{ op: "sum", field: selectedMetric, as: "value" }],
+      groupby: ["year", groupBy.field]
+    },
+    // Limit to top 10 series by total value to keep chart readable
+    {
+      window: [{ op: "sum", field: "value", as: "total_by_group" }],
+      groupby: [groupBy.field]
+    },
+    {
+      window: [{ op: "rank", as: "rank" }],
+      sort: [{ field: "total_by_group", order: "descending" }]
+    },
+    {
+      filter: "datum.rank <= 10"
+    }
+  ];
+
+  // Update field references in the spec
+  spec.encoding.x.field = "year";
+  spec.encoding.x.type = "ordinal"; // Use ordinal for year to avoid date parsing issues
+  spec.encoding.y.field = "value";
+  spec.encoding.color.field = groupBy.field;
+  
+  // Set width and height
+  spec.width = 600;
+  spec.height = 300;
+  
+  // Update axis labels
+  spec.encoding.y.axis.title = metric.label;
+  spec.encoding.color.legend.title = groupBy.label;
+  
+  // Update tooltip to show the original field names (country names for readability)
+  spec.encoding.tooltip = [
+    {field: "year", type: "ordinal", title: "Year"},
+    {field: groupBy.field, type: "nominal", title: groupBy.label},
+    {field: "value", type: "quantitative", title: metric.label, format: metric.format === 'currency' ? '$,.0f' : ',.0f'}
+  ];
+
+  // Set color scale
+  if (config.colors) {
+    spec.encoding.color.scale = {
+      range: config.colors
+    };
+  }
+
+  return spec;
+};
+
+// Helper function to create a chart specification (legacy - for processed data)
 export const createChartSpec = (chartType, data, config, selectedMetric, selectedGroupBy) => {
   const baseSpec = BASE_SPECS[chartType];
   if (!baseSpec) return null;

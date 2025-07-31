@@ -117,12 +117,16 @@ const SearchPanel = ({
         <div className="relative flex-1">
           {/* From Country Pills */}
           <div className="flex flex-wrap gap-2 mb-2">
-            {fromCountries.map((country) => (
-              <div key={country} className="bg-blue-600 text-white px-3 py-1 rounded-full flex items-center gap-2 text-sm font-medium">
-                <span>{country}</span>
-                <button onClick={() => handleRemoveFromCountry(country)} className="text-blue-200 hover:text-white text-lg leading-none">×</button>
-              </div>
-            ))}
+            {fromCountries.map((country) => {
+              const displayName = typeof country === 'string' ? country : country.country_name;
+              const key = typeof country === 'string' ? country : (country.code || country.country_name);
+              return (
+                <div key={key} className="bg-blue-600 text-white px-3 py-1 rounded-full flex items-center gap-2 text-sm font-medium">
+                  <span>{displayName}</span>
+                  <button onClick={() => handleRemoveFromCountry(country)} className="text-blue-200 hover:text-white text-lg leading-none">×</button>
+                </div>
+              );
+            })}
           </div>
           {/* From Country Input */}
           <div className="relative">
@@ -143,7 +147,7 @@ const SearchPanel = ({
                     key={index}
                     onMouseDown={e => {
                       e.preventDefault();
-                      handleSelectFromCountry(suggestion.country_name || suggestion);
+                      handleSelectFromCountry(suggestion);
                     }}
                     className="w-full text-left px-4 py-3 hover:bg-gray-600 text-white border-b border-gray-600 last:border-b-0"
                   >
@@ -159,12 +163,16 @@ const SearchPanel = ({
         <div className="relative flex-1">
           {/* To Country Pills */}
           <div className="flex flex-wrap gap-2 mb-2">
-            {toCountries.map((country) => (
-              <div key={country} className="bg-blue-600 text-white px-3 py-1 rounded-full flex items-center gap-2 text-sm font-medium">
-                <span>{country}</span>
-                <button onClick={() => handleRemoveToCountry(country)} className="text-blue-200 hover:text-white text-lg leading-none">×</button>
-              </div>
-            ))}
+            {toCountries.map((country) => {
+              const displayName = typeof country === 'string' ? country : country.country_name;
+              const key = typeof country === 'string' ? country : (country.code || country.country_name);
+              return (
+                <div key={key} className="bg-blue-600 text-white px-3 py-1 rounded-full flex items-center gap-2 text-sm font-medium">
+                  <span>{displayName}</span>
+                  <button onClick={() => handleRemoveToCountry(country)} className="text-blue-200 hover:text-white text-lg leading-none">×</button>
+                </div>
+              );
+            })}
           </div>
           {/* To Country Input */}
           <div className="relative">
@@ -209,7 +217,7 @@ const SearchPanel = ({
                     key={index}
                     onMouseDown={e => {
                       e.preventDefault();
-                      handleSelectToCountry(suggestion.country_name || suggestion);
+                      handleSelectToCountry(suggestion);
                     }}
                     className="w-full text-left px-4 py-3 hover:bg-gray-600 text-white border-b border-gray-600 last:border-b-0"
                   >

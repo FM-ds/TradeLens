@@ -80,8 +80,8 @@ class TradeRecord(BaseModel):
     importer_id: int
     trade_flow: str       # "imports" or "exports"
     value: float          # Trade value in USD
-    quantity: float       # Quantity traded
-    unit: str            # Unit of measurement (typically "kg")
+    quantity: float       # Quantity traded in metric tons
+    unit: str            # Unit of measurement (typically "metric tons")
 
 # Model to define a trade query response meta-data object - this will move to a separate model folder
 class TradeDataResponse(BaseModel):
@@ -335,7 +335,7 @@ async def query_trade_data(
                     ? as trade_flow,
                     SUM(value) as value,
                     SUM(quantity) as quantity,
-                    'kg' as unit
+                    'metric tons' as unit
                 """
                 group_clause = "GROUP BY product, year"
             else:
@@ -349,7 +349,7 @@ async def query_trade_data(
                     ? as trade_flow,
                     SUM(value) as value,
                     SUM(quantity) as quantity,
-                    'kg' as unit
+                    'metric tons' as unit
                 """
                 group_clause = "GROUP BY product, year"
                 
@@ -363,12 +363,12 @@ async def query_trade_data(
                 year,
                 CAST(importer AS VARCHAR) as importer_id,
                 CAST(importer_name AS VARCHAR) as importer_name,
-                CAST(exporter AS VARCHAR) as importer_id,
+                CAST(exporter AS VARCHAR) as exporter_id,
                 CAST(exporter_name AS VARCHAR) as exporter_name,
                 ? as trade_flow,
                 value as value,
                 quantity as quantity,
-                'kg' as unit  
+                'metric tons' as unit  
             """
             params.append(trade_type)
             group_clause = ""
@@ -465,7 +465,7 @@ async def query_trade_data(
                     trade_flow=str(row[7]) if row[7] is not None else "",
                     value=float(row[8]) if row[8] is not None else 0.0,
                     quantity=float(row[9]) if row[9] is not None else 0.0,
-                    unit=str(row[10]) if row[10] is not None else "KG Tonnes" 
+                    unit=str(row[10]) if row[10] is not None else "metric tons" 
                 )
                 data.append(trade_record)
             except (IndexError, ValueError, TypeError) as e:

@@ -3,9 +3,10 @@ import { VegaLite } from 'react-vega';
 import { 
   CHART_TYPES, 
   getChartConfig, 
-  createChartSpec, 
+  createChartSpecWithAPI, 
   formatValue 
 } from '../config/chartConfig';
+import useDatasetApi from '../hooks/useDatasetApi';
 
 const DataVisualization = ({ 
   data = [], 
@@ -13,6 +14,7 @@ const DataVisualization = ({
   query = null 
 }) => {
   const config = getChartConfig(dataset);
+  const api = useDatasetApi(config);
   
   // For BACI, adjust groupBy options based on trade direction
   const getAvailableGroupByFields = () => {
@@ -33,111 +35,122 @@ const DataVisualization = ({
   const [selectedMetric, setSelectedMetric] = useState(config.defaultMetric);
   const [selectedGroupBy, setSelectedGroupBy] = useState(config.defaultGroupBy);
 
-  // Process and transform data for charting
-  const chartData = useMemo(() => {
-    if (!data || data.length === 0) {
-      console.log('DataVisualization: No data provided');
-      return [];
-    }
+  // Build API URL for direct data fetching
+  const apiUrl = useMemo(() => {
+    if (!query || !api) return null;
 
-    console.log('DataVisualization: Raw data sample:', data.slice(0, 3));
-    console.log('DataVisualization: Dataset:', dataset);
-    console.log('DataVisualization: Config:', config);
-    console.log('DataVisualization: Available data columns:', Object.keys(data[0] || {}));
-
-    const groupByField = availableGroupByFields.find(g => g.value === selectedGroupBy);
-    if (!groupByField) {
-      console.log('DataVisualization: No groupBy field found for:', selectedGroupBy);
-      return [];
-    }
-
-    console.log('DataVisualization: Using groupBy field:', groupByField);
-    console.log('DataVisualization: Selected metric:', selectedMetric);
-    console.log('DataVisualization: Sample field values:', data.slice(0, 3).map(row => ({ 
-      [groupByField.field]: row[groupByField.field],
-      [selectedMetric]: row[selectedMetric],
-      [config.dateField]: row[config.dateField],
-      product_description: row.product_description,
-      exporter_name: row.exporter_name,
-      importer_name: row.importer_name
-    })));
-
-    // Group data by the selected grouping field and year
-    const groupedData = data.reduce((acc, row) => {
-      const year = row[config.dateField];
-      const groupValue = row[groupByField.field] || `Unknown ${groupByField.label}`;
-      const value = parseFloat(row[selectedMetric]) || 0;
+    const baseUrl = 'http://127.0.0.1:8000/api';
+    
+    if (dataset === 'baci') {
+      const tradeType = query.tradeType.toLowerCase().replace('trade: ', '');
+      const productCodes = query.products.map(p => p.code || p.product_code).join(',');
       
-      if (!year || isNaN(value)) return acc;
-
-      const key = `${year}-${groupValue}`;
-      if (!acc[key]) {
-        acc[key] = {
-          year: new Date(year, 0, 1), // Convert to date for temporal axis
-          group: groupValue,
-          value: 0,
-          count: 0
-        };
+      // Handle country codes/names properly - convert names to codes for API
+      let fromCountry = 'everywhere';
+      let toCountry = 'everywhere';
+      
+      if (query.fromCountries && query.fromCountries.length > 0) {
+        const countryCodes = query.fromCountries.map(c => {
+          if (typeof c === 'string') {
+            // Handle string values like "everywhere" or "world"
+            if (c.toLowerCase() === 'everywhere') return 'everywhere';
+            if (c.toLowerCase() === 'world') return 'world';
+            // Fallback to name->code lookup for legacy data
+            return api.getCountryCodeByName(c);
+          }
+          // Extract code from country object
+          return c.code || c.country_code || 'everywhere';
+        });
+        fromCountry = countryCodes.join(',');
       }
       
-      // Aggregate values (sum for totals)
-      acc[key].value += value;
-      acc[key].count += 1;
+      if (query.toCountries && query.toCountries.length > 0) {
+        const countryCodes = query.toCountries.map(c => {
+          if (typeof c === 'string') {
+            // Handle string values like "everywhere" or "world"
+            if (c.toLowerCase() === 'everywhere') return 'everywhere';
+            if (c.toLowerCase() === 'world') return 'world';
+            // Fallback to name->code lookup for legacy data
+            return api.getCountryCodeByName(c);
+          }
+          // Extract code from country object
+          return c.code || c.country_code || 'everywhere';
+        });
+        toCountry = countryCodes.join(',');
+      }
       
-      return acc;
-    }, {});
-
-    // Convert to array and sort by year and group
-    const result = Object.values(groupedData)
-      .filter(d => d.value > 0) // Filter out zero values
-      .sort((a, b) => {
-        const yearDiff = a.year.getTime() - b.year.getTime();
-        if (yearDiff !== 0) return yearDiff;
-        return a.group.localeCompare(b.group);
+      const params = new URLSearchParams({
+        trade_type: tradeType,
+        product_codes: productCodes,
+        from_country: fromCountry,
+        to_country: toCountry,
+        year_from: query.startYear,
+        year_to: query.endYear,
+        page: 1,
+        page_size: 1000 // Large page size to get comprehensive data
       });
-
-    console.log('DataVisualization: Processed chart data:', result.slice(0, 5));
-    console.log('DataVisualization: Total data points:', result.length);
-    
-    return result;
-  }, [data, selectedMetric, selectedGroupBy, availableGroupByFields]);
-
-  // Create Vega-Lite specification
-  const vegaSpec = useMemo(() => {
-    if (chartData.length === 0) {
-      console.log('DataVisualization: No chart data for spec creation');
-      return null;
+      
+      const url = `${baseUrl}/trade-query?${params.toString()}`;
+      console.log('DataVisualization: Built API URL:', url);
+      console.log('DataVisualization: Original countries:', { from: query.fromCountries, to: query.toCountries });
+      console.log('DataVisualization: Mapped to codes:', { from: fromCountry, to: toCountry });
+      return url;
+    } else if (dataset === 'prodcom') {
+      const productCodes = query.products.map(p => p.code || p.product_code).join(',');
+      
+      const params = new URLSearchParams({
+        product_codes: productCodes,
+        year_from: query.startYear,
+        year_to: query.endYear,
+        measure: query.measureType || 'Value',
+        page: 1,
+        page_size: 1000
+      });
+      
+      const url = `${baseUrl}/prodcom-query?${params.toString()}`;
+      console.log('DataVisualization: Built API URL:', url);
+      return url;
     }
     
-    // Use the actual groupBy field info for spec creation
-    const groupByField = availableGroupByFields.find(g => g.value === selectedGroupBy);
-    const spec = createChartSpec(selectedChartType, chartData, { ...config, groupByFields: availableGroupByFields }, selectedMetric, selectedGroupBy);
+    return null;
+  }, [query, dataset, api]);
+
+  // Create Vega-Lite specification with API data source
+  const vegaSpec = useMemo(() => {
+    if (!apiUrl) {
+      console.log('DataVisualization: No API URL available');
+      return null;
+    }
+
+    console.log('DataVisualization: Using API URL:', apiUrl);
+    console.log('DataVisualization: Selected metric:', selectedMetric);
+    console.log('DataVisualization: Selected groupBy:', selectedGroupBy);
+    
+    const spec = createChartSpecWithAPI(selectedChartType, apiUrl, config, selectedMetric, selectedGroupBy, availableGroupByFields);
     console.log('DataVisualization: Generated Vega spec:', spec);
     
     return spec;
-  }, [chartData, selectedChartType, config, selectedMetric, selectedGroupBy, availableGroupByFields]);
-
-  // Get metric info for display
+  }, [apiUrl, selectedChartType, config, selectedMetric, selectedGroupBy, availableGroupByFields]);  // Get metric info for display
   const metricInfo = config.availableMetrics.find(m => m.value === selectedMetric);
   const groupByInfo = availableGroupByFields.find(g => g.value === selectedGroupBy);
 
-  if (!data || data.length === 0) {
+  if (!query) {
     return (
       <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
         <h4 className="text-lg font-semibold mb-4">Data Visualization</h4>
         <div className="text-center py-8 text-gray-400">
-          No data available for visualization
+          No query available for visualization
         </div>
       </div>
     );
   }
 
-  if (chartData.length === 0) {
+  if (!vegaSpec) {
     return (
       <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
         <h4 className="text-lg font-semibold mb-4">Data Visualization</h4>
         <div className="text-center py-8 text-gray-400">
-          No data points available for the selected metric and grouping
+          Loading chart data...
         </div>
       </div>
     );
@@ -213,39 +226,6 @@ const DataVisualization = ({
             theme="dark"
             renderer="canvas"
           />
-        </div>
-      )}
-
-      {/* Data Summary - only show for non-line charts */}
-      {selectedChartType !== CHART_TYPES.LINE && (
-        <div className="mt-4 pt-4 border-t border-gray-700">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
-            <div className="text-center">
-              <div className="text-gray-400">Data Points</div>
-              <div className="font-semibold text-white">{chartData.length}</div>
-            </div>
-            <div className="text-center">
-              <div className="text-gray-400">Series</div>
-              <div className="font-semibold text-white">
-                {new Set(chartData.map(d => d.group)).size}
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-gray-400">Year Range</div>
-              <div className="font-semibold text-white">
-                {Math.min(...chartData.map(d => d.year.getFullYear()))} - {Math.max(...chartData.map(d => d.year.getFullYear()))}
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-gray-400">Total Value</div>
-              <div className="font-semibold text-white">
-                {formatValue(
-                  chartData.reduce((sum, d) => sum + d.value, 0),
-                  metricInfo?.format || 'number'
-                )}
-              </div>
-            </div>
-          </div>
         </div>
       )}
     </div>

@@ -78,8 +78,8 @@ const TradeDataPlatform = () => {
     if (query.dataset === 'baci') {
       // BACI query display
       const direction = query.tradeType.replace('Trade: ', '');
-      const from = query.fromCountries.join(', ') || 'Any';
-      const to = query.toCountries.join(', ') || 'Any';
+      const from = query.fromCountries.map(c => typeof c === 'string' ? c : c.country_name).join(', ') || 'Any';
+      const to = query.toCountries.map(c => typeof c === 'string' ? c : c.country_name).join(', ') || 'Any';
       
       // Use appropriate preposition based on trade direction
       const preposition = direction.toLowerCase() === 'exports' ? 'to' : 'from';
@@ -121,15 +121,27 @@ const TradeDataPlatform = () => {
         
         // Map countries to codes, handling special cases
         const fromCountry = activeQuery.fromCountries.map(c => {
-          if (c.toLowerCase() === 'everywhere') return 'everywhere';
-          if (c.toLowerCase() === 'world') return 'world';
-          return api.getCountryCodeByName(c);
+          if (typeof c === 'string') {
+            // Handle string values like "everywhere" or "world"
+            if (c.toLowerCase() === 'everywhere') return 'everywhere';
+            if (c.toLowerCase() === 'world') return 'world';
+            // Fallback to name->code lookup for legacy data
+            return api.getCountryCodeByName(c);
+          }
+          // Extract code from country object
+          return c.code || c.country_code || 'everywhere';
         }).join(',');
         
         const toCountry = activeQuery.toCountries.map(c => {
-          if (c.toLowerCase() === 'everywhere') return 'everywhere';
-          if (c.toLowerCase() === 'world') return 'world';
-          return api.getCountryCodeByName(c);
+          if (typeof c === 'string') {
+            // Handle string values like "everywhere" or "world"
+            if (c.toLowerCase() === 'everywhere') return 'everywhere';
+            if (c.toLowerCase() === 'world') return 'world';
+            // Fallback to name->code lookup for legacy data
+            return api.getCountryCodeByName(c);
+          }
+          // Extract code from country object
+          return c.code || c.country_code || 'everywhere';
         }).join(',');
 
         queryParams = {

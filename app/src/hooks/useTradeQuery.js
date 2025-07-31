@@ -28,9 +28,7 @@ const useTradeQuery = (query, currentPage = 1, rowsPerPage = 10) => {
 
         if (query.dataset === 'baci') {
           // BACI query parameters
-          const tradeType = query.tradeType.toLowerCase().includes('trade:') 
-            ? query.tradeType.toLowerCase().replace('trade: ', '')
-            : query.tradeType.toLowerCase();
+          const tradeType = query.tradeType.toLowerCase().replace('trade: ', '');
           const productCodes = query.products.map(p => p[config.product.codeField]).join(',');
           
           // Map countries to codes, handling special cases

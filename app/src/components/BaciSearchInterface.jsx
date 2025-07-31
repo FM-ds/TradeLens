@@ -68,7 +68,9 @@ const BaciSearchInterface = ({
   };
 
   const handleSelectFromCountry = (country) => {
-    if (!fromCountries.includes(country)) {
+    // Handle both string names (like "Everywhere", "World") and country objects
+    const countryKey = typeof country === 'string' ? country : country.country_name;
+    if (!fromCountries.find(c => (typeof c === 'string' ? c : c.country_name) === countryKey)) {
       setFromCountries([...fromCountries, country]);
     }
     setFromCountrySearch('');
@@ -76,7 +78,8 @@ const BaciSearchInterface = ({
   };
 
   const handleRemoveFromCountry = (country) => {
-    setFromCountries(fromCountries.filter(c => c !== country));
+    const countryKey = typeof country === 'string' ? country : country.country_name;
+    setFromCountries(fromCountries.filter(c => (typeof c === 'string' ? c : c.country_name) !== countryKey));
   };
 
   const handleToCountrySearch = (value) => {
@@ -84,7 +87,9 @@ const BaciSearchInterface = ({
   };
 
   const handleSelectToCountry = (country) => {
-    if (!toCountries.includes(country)) {
+    // Handle both string names (like "Everywhere", "World") and country objects
+    const countryKey = typeof country === 'string' ? country : country.country_name;
+    if (!toCountries.find(c => (typeof c === 'string' ? c : c.country_name) === countryKey)) {
       setToCountries([...toCountries, country]);
     }
     setToCountrySearch('');
@@ -92,7 +97,8 @@ const BaciSearchInterface = ({
   };
 
   const handleRemoveToCountry = (country) => {
-    setToCountries(toCountries.filter(c => c !== country));
+    const countryKey = typeof country === 'string' ? country : country.country_name;
+    setToCountries(toCountries.filter(c => (typeof c === 'string' ? c : c.country_name) !== countryKey));
   };
 
   const handleExecuteQuery = () => {
