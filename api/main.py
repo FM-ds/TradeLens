@@ -31,26 +31,37 @@ with open("data/shared/HS6_products.json", "r") as f:
 with open("data/shared/countries.json", "r") as f:
     COUNTRIES = json.load(f)
 
-# Load embeddings with metadata - organized by product type
+# Load BGE embeddings with metadata - organized by product type
 EMBEDDINGS_DATA = {
     "countries": [],
     "hs6_products": [],
     "cn8_products": []
 }
 
-# Load embeddings
+# Load BGE embeddings
 try:
-    with open("data/shared/country_embeddings.json", "r") as f:
+    with open("data/shared/country_embeddings_bge_dump.json", "r") as f:
         EMBEDDINGS_DATA["countries"] = json.load(f)
-    with open("data/shared/HS6_product_embeddings.json", "r") as f:
+    with open("data/shared/product_embeddings_bge_dump.json", "r") as f:
         EMBEDDINGS_DATA["hs6_products"] = json.load(f)
-    with open("data/shared/cn8_division_industry_product_embeddings.json", "r") as f:
+    with open("data/shared/cn8_division_industry_product_embeddings_bge.json", "r") as f:
         EMBEDDINGS_DATA["cn8_products"] = json.load(f)
 except FileNotFoundError as e:
-    print(f"Warning: Could not load embeddings: {e}")
+    print(f"Warning: Could not load BGE embeddings: {e}")
+    # Fallback to old embeddings if BGE embeddings are not available
+    try:
+        with open("data/shared/country_embeddings.json", "r") as f:
+            EMBEDDINGS_DATA["countries"] = json.load(f)
+        with open("data/shared/HS6_product_embeddings.json", "r") as f:
+            EMBEDDINGS_DATA["hs6_products"] = json.load(f)
+        with open("data/shared/cn8_division_industry_product_embeddings.json", "r") as f:
+            EMBEDDINGS_DATA["cn8_products"] = json.load(f)
+        print("Loaded fallback embeddings (non-BGE)")
+    except FileNotFoundError as fallback_error:
+        print(f"Error: Could not load any embeddings: {fallback_error}")
 
-# Load embedding model once
-EMBEDDING_MODEL = SentenceTransformer('all-MiniLM-L6-v2')
+# Load BGE embedding model for better semantic search performance
+EMBEDDING_MODEL = SentenceTransformer('BAAI/bge-small-en-v1.5')
 
 # Prepare numpy arrays for fast similarity search - organized by product type
 def build_embedding_matrices():
@@ -66,6 +77,7 @@ def build_embedding_matrices():
     return matrices
 
 EMBEDDING_MATRICES = build_embedding_matrices()
+
 
 # Model to define a trade data record object - this will move to a separate model folder
 class TradeRecord(BaseModel):

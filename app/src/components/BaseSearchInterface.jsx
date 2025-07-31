@@ -53,7 +53,6 @@ const BaseSearchInterface = ({
     <div className="space-y-8">
       {/* Main Question */}
       <div>
-        <h3 className="text-3xl font-medium text-gray-300 mb-6">What are you looking for?</h3>
         {/* Product Search */}
         <div className="relative">
           <Package className="absolute left-0 top-1/2 transform -translate-y-1/2 text-gray-400 w-6 h-6 z-10" />
