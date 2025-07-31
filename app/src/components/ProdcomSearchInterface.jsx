@@ -95,6 +95,22 @@ const ProdcomSearchInterface = ({
 
   return (
     <div className="bg-gray-800 border border-gray-600 rounded-lg p-8">
+      {/* Dataset Description */}
+      <div className="mb-6 p-4 bg-gray-700 rounded-lg border border-gray-600">
+        <p className="text-sm text-gray-300 leading-relaxed">
+          Search ONS UK manufacturers' sales by product data, available at{' '}
+          <a 
+            href="https://www.ons.gov.uk/businessindustryandtrade/manufacturingandproductionindustry/datasets/ukmanufacturerssalesbyproductprodcom" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-blue-400 hover:text-blue-300 underline"
+          >
+            ONS.gov.uk
+          </a>
+          . Data in the Beta version ranges from 2014-2024. Note that data may be missing where data values have been suppressed or were not collected.
+        </p>
+      </div>
+      
       <div className="space-y-8">
         {/* Main Question */}
         <div>

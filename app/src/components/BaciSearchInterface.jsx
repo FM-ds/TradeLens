@@ -139,6 +139,22 @@ const BaciSearchInterface = ({
 
   return (
     <div className="bg-gray-800 border border-gray-600 rounded-lg p-8">
+      {/* Dataset Description */}
+      <div className="mb-6 p-4 bg-gray-700 rounded-lg border border-gray-600">
+        <p className="text-sm text-gray-300 leading-relaxed">
+          Search CEPII BACI data (based on UN Comtrade), available at{' '}
+          <a 
+            href="https://www.cepii.fr/CEPII/en/bdd_modele/bdd_modele_item.asp?id=37" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-blue-400 hover:text-blue-300 underline"
+          >
+            CEPII.fr
+          </a>
+          . The data in the Beta version ranges from 2017-2022 and is based on HS17 product classifications. Note that data may be missing where data values have been suppressed.
+        </p>
+      </div>
+      
       <BaseSearchInterface
         config={config}
         selectedProducts={selectedProducts}
