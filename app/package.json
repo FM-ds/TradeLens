@@ -7,10 +7,15 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:dev": "./build.sh development",
+    "build:prod": "./build.sh production",
     "lint": "eslint .",
     "preview": "vite preview",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "predeploy": "npm run build:dev",
+    "deploy": "gh-pages -d dist",
+    "deploy:cf-production": "npm run build:prod && gh-pages -d dist -b cloudflare-production",
+    "deploy:cf-cli": "npm run build:prod && wrangler pages deploy dist --project-name=tradelens",
+    "preview:cf": "npm run build && wrangler pages dev dist"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.10",

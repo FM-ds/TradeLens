@@ -7,5 +7,6 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
-  base: '/TradeLens/', // Important for GitHub Pages
+  // Remove base path for Cloudflare Pages root domain deployment
+  // base: '/TradeLens/', // Comment out for Cloudflare Pages
 })

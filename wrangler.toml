@@ -1,0 +1,11 @@
+name = "tradelens"
+compatibility_date = "2024-07-31"
+
+[env.production]
+name = "tradelens"
+
+# Pages configuration for the React app
+[[pages]]
+name = "tradelens"
+compatibility_date = "2024-07-31"
+build_output_dir = "./app/dist"
