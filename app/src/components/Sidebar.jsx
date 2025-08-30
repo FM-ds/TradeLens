@@ -44,7 +44,6 @@ const Sidebar = ({
       {/* New Query Button */}
       <button
         onClick={handleNewQuery}
-        disabled={selectedProducts.length === 0}
         className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2 px-4 py-3"
         title={sidebarCollapsed ? "New Query" : ""}
       >

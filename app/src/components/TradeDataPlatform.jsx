@@ -199,7 +199,10 @@ const TradeDataPlatform = () => {
           setSidebarCollapsed={setSidebarCollapsed}
           queries={queries}
           activeQueryId={activeQueryId}
-          handleNewQuery={() => {}} // Disabled in new approach
+          handleNewQuery={() => {
+            setActiveQueryId(null);
+            setCurrentPage(1);
+          }}
           handleLoadQuery={handleLoadQuery}
           handleDeleteQuery={handleDeleteQuery}
           getQueryDisplayName={getQueryDisplayName}
