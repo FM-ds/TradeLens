@@ -223,6 +223,11 @@ def embedding_autocomplete(
         scores = np.dot(embedding_matrix, search_emb) / norms
         top_idx = np.argsort(scores)[::-1][:limit]
         
+        min_threshold = 0.3  # Adjust between 0 to 1.0 (the higher, the stricter)
+        good_matches = [(i, score) for i, score in enumerate(scores) if score > min_threshold]
+        top_idx = [i for i, score in sorted(good_matches, key=lambda x: x[1], reverse=True)[:limit]]
+
+
         return [
             {k: v for k, v in items_data[i].items() if k != "embedding"}
             for i in top_idx
