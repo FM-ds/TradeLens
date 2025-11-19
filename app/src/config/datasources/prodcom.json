@@ -3,9 +3,9 @@
   "name": "PRODCOM Manufacturing Database",
   "description": "EU manufacturer sales data by CN8 product classification.",
   "endpoints": {
-    "products": "/api/products/",
-    "countries": "/api/countries/",
-    "tradeQuery": "/api/prodcom-query/"
+    "products": "/api/products",
+    "countries": "/api/countries",
+    "tradeQuery": "/api/prodcom-query"
   },
   "product": {
     "searchParam": "search",

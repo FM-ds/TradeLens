@@ -3,9 +3,9 @@
   "name": "BACI Trade Database",
   "description": "International trade data by product and country, based on BACI HS17 taxonomy.",
   "endpoints": {
-    "products": "/api/products/",
-    "countries": "/api/countries/",
-    "tradeQuery": "/api/trade-query/"
+    "products": "/api/products",
+    "countries": "/api/countries",
+    "tradeQuery": "/api/trade-query"
   },
   "product": {
     "searchParam": "search",
@@ -46,7 +46,7 @@
   },
   "ui": {
     "showEverywhereOption": true,
-    "showWorldOption": true,
+    "showWorldOption": false,
     "productPillFormat": "{code}:{name}",
     "productNameTruncate": 12
   }
