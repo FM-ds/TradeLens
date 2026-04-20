@@ -4,6 +4,8 @@ product_embeddings_dump.json
 *.parquet
 *.npy
 venv/
+trade_api_venv/
+*venv*/
 
 # Setup metadata
 *.egg-info/
