@@ -4,6 +4,11 @@ product_embeddings_dump.json
 *.parquet
 *.npy
 venv/
+trade_api_venv/
+*venv*/
+
+# Setup metadata
+*.egg-info/
 
 # All .DS_Store files
 .DS_Store

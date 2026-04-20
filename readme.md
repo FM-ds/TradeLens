@@ -13,42 +13,54 @@ This repository is structured as such:
 
 # Getting started
 
-  
 
 To get TradeLens running locally, procure the neccesary input data, and prepare your node and python environments.
-
-## Data-prep
-
-TradeLens relies on some data files too big for GitHub to track conveniently.
-
-Run `data-setup.py` to download the neccesary files:
-
-``` python data-setup```
   
 ## Backend
 
-- Prerequisites: A recent Python version (tested with python 3.11).
-1. Build a venv from the requirements.txt file:
+Prerequisites: A recent Python version (tested with python 3.11).
+
+1. Build a virtual environment:
+
+**On Mac**
 
 ```bash
-
 python  -m  venv  trade_api_venv
-
 source  trade_api_venv/bin/activate
-
-pip  install  -r  requirements.txt
-
 ```
-  
 
-2. Launch main.py as usual, e.g. with uvicorn:
+**On Windows**
 
 ```bash
-
-uvicorn  main:app  --reload
-
+python  -m  venv  trade_api_venv
+.\trade_api_venv\Scripts\activate
 ```
-  
+
+2. Install requirements:
+To install the pyproject.toml requirements, navigate to `api` with:
+
+```bash
+cd api
+```
+
+and run 
+
+```bash
+pip  install  -e .
+```
+
+3. Download and prepare data:
+TradeLens relies on some data files too big for GitHub to track conveniently.
+
+From the root of the `\TradeLens` folder, run `data-setup.py` to download the neccesary files:
+``` python data-setup```
+
+4. Activate API:
+From `\api`, launch main.py with uvicorn 
+
+```bash
+uvicorn  main:app  --reload
+```
 
 ## Frontend
 
