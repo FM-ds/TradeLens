@@ -33,7 +33,7 @@ source  trade_api_venv/bin/activate
 
 ```bash
 python  -m  venv  trade_api_venv
-.\venv\Scripts\activate
+.\trade_api_venv\Scripts\activate
 ```
 
 2. Install requirements:
