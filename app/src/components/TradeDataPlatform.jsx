@@ -18,7 +18,8 @@ const TradeDataPlatform = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-
+  // Query draft key to force remounting search interface for new queries
+  const [queryDraftKey, setQueryDraftKey] = useState(0);
   // Dataset management
   const [selectedDataset, setSelectedDataset] = useState('baci');
   const availableDatasets = ['baci', 'prodcom']; // Add more datasets here as they become available
@@ -57,7 +58,7 @@ const TradeDataPlatform = () => {
 
   // Query management
   const handleQueryCreated = (newQuery) => {
-    setQueries([...queries, newQuery]);
+    setQueries(prev => [...prev, newQuery]); // Add new query to list
     setActiveQueryId(newQuery.id);
     setCurrentPage(1); // Reset pagination for new query
   };
@@ -199,7 +200,12 @@ const TradeDataPlatform = () => {
           setSidebarCollapsed={setSidebarCollapsed}
           queries={queries}
           activeQueryId={activeQueryId}
-          handleNewQuery={() => {}} // Disabled in new approach
+          // handleNewQuery={() => {}} // Disabled in new approach
+          handleNewQuery={() => {
+            setActiveQueryId(null);
+            setCurrentPage(1);
+            setQueryDraftKey(prev => prev + 1); // force reset form
+          }}
           handleLoadQuery={handleLoadQuery}
           handleDeleteQuery={handleDeleteQuery}
           getQueryDisplayName={getQueryDisplayName}
@@ -221,10 +227,11 @@ const TradeDataPlatform = () => {
               
               {/* Dataset-specific Search Interface */}
               <DatasetSearchInterface
+                key={activeQueryId ?? queryDraftKey} // Force remount when activeQueryId or queryDraftKey changes
                 selectedDataset={selectedDataset}
                 onQueryCreated={handleQueryCreated}
                 disabled={false}
-                initialState={{}}
+                initialState={activeQuery ?? {}}
               />
             </div>
             {/* Results Section */}
