@@ -60,11 +60,13 @@ const TradeDataPlatform = () => {
   const handleQueryCreated = (newQuery) => {
     setQueries(prev => [...prev, newQuery]); // Add new query to list
     setActiveQueryId(newQuery.id);
+    setSelectedDataset(newQuery.dataset); // Ensure dataset selector updates to match new query
     setCurrentPage(1); // Reset pagination for new query
   };
 
   const handleLoadQuery = (query) => {
     setActiveQueryId(query.id);
+    setSelectedDataset(query.dataset); // Ensure dataset selector updates to match loaded query
     setCurrentPage(1); // Reset pagination when loading different query
   };
 
