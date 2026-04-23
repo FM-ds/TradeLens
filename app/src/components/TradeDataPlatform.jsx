@@ -38,6 +38,12 @@ const TradeDataPlatform = () => {
   const { config } = useDatasetConfig(activeQuery?.dataset);
   const api = useDatasetApi(config);
 
+  useEffect(() => { // Sync selected dataset with active query when it changes
+  if (activeQuery) {
+    setSelectedDataset(activeQuery.dataset);
+  }
+  }, [activeQuery]);
+
   // Auto-collapse on narrow screens (disabled - keep sidebar expanded by default)
   useEffect(() => {
     const handleResize = () => {
