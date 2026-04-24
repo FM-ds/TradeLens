@@ -13,7 +13,7 @@ const ProdcomSearchInterface = ({
   const api = useDatasetApi(config);
 
   // Search interface state
-  const [selectedProducts, setSelectedProducts] = useState(initialState.selectedProducts || []);
+  const [selectedProducts, setSelectedProducts] = useState(initialState.products || []);
   const [productSearch, setProductSearch] = useState('');
   const [showProductSuggestions, setShowProductSuggestions] = useState(false);
   const [productTypeFilter, setProductTypeFilter] = useState(initialState.productTypeFilter || 'Product');

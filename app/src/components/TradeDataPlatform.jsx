@@ -18,7 +18,8 @@ const TradeDataPlatform = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-
+  // Query draft key to force remounting search interface for new queries
+  const [queryDraftKey, setQueryDraftKey] = useState(0);
   // Dataset management
   const [selectedDataset, setSelectedDataset] = useState('baci');
   const availableDatasets = ['baci', 'prodcom']; // Add more datasets here as they become available
@@ -36,6 +37,12 @@ const TradeDataPlatform = () => {
   // API hooks for CSV download
   const { config } = useDatasetConfig(activeQuery?.dataset);
   const api = useDatasetApi(config);
+
+  useEffect(() => { // Sync selected dataset with active query when it changes
+  if (activeQuery) {
+    setSelectedDataset(activeQuery.dataset);
+  }
+  }, [activeQuery]);
 
   // Auto-collapse on narrow screens (disabled - keep sidebar expanded by default)
   useEffect(() => {
@@ -57,13 +64,15 @@ const TradeDataPlatform = () => {
 
   // Query management
   const handleQueryCreated = (newQuery) => {
-    setQueries([...queries, newQuery]);
+    setQueries(prev => [...prev, newQuery]); // Add new query to list
     setActiveQueryId(newQuery.id);
+    setSelectedDataset(newQuery.dataset); // Ensure dataset selector updates to match new query
     setCurrentPage(1); // Reset pagination for new query
   };
 
   const handleLoadQuery = (query) => {
     setActiveQueryId(query.id);
+    setSelectedDataset(query.dataset); // Ensure dataset selector updates to match loaded query
     setCurrentPage(1); // Reset pagination when loading different query
   };
 
@@ -199,7 +208,12 @@ const TradeDataPlatform = () => {
           setSidebarCollapsed={setSidebarCollapsed}
           queries={queries}
           activeQueryId={activeQueryId}
-          handleNewQuery={() => {}} // Disabled in new approach
+          // handleNewQuery={() => {}} // Disabled in new approach
+          handleNewQuery={() => {
+            setActiveQueryId(null);
+            setCurrentPage(1);
+            setQueryDraftKey(prev => prev + 1); // force reset form
+          }}
           handleLoadQuery={handleLoadQuery}
           handleDeleteQuery={handleDeleteQuery}
           getQueryDisplayName={getQueryDisplayName}
@@ -221,10 +235,11 @@ const TradeDataPlatform = () => {
               
               {/* Dataset-specific Search Interface */}
               <DatasetSearchInterface
+                key={activeQueryId ?? queryDraftKey} // Force remount when activeQueryId or queryDraftKey changes
                 selectedDataset={selectedDataset}
                 onQueryCreated={handleQueryCreated}
                 disabled={false}
-                initialState={{}}
+                initialState={activeQuery ?? {}}
               />
             </div>
             {/* Results Section */}
