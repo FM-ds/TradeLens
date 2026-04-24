@@ -75,6 +75,7 @@ dependencies = [
     "pygments==2.19.2",
     "pyogrio==0.11.0",
     "pyproj==3.7.1",
+    "pytest==9.0.2",
     "python-dateutil==2.9.0.post0",
     "python-multipart==0.0.20",
     "pytz==2025.2",
