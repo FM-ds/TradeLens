@@ -74,7 +74,7 @@ npm install
 If package issues are flagged, resolve dependency conflicts with
 
 ```bash
-npm install --legacy-peer-deps   # 
+npm install --legacy-peer-deps   
 ```
 
 Fix any remaining vulnerabilities with
