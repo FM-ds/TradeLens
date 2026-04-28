@@ -50,7 +50,7 @@ dependencies = [
     "joblib==1.5.1",
     "jsonschema==4.24.0",
     "jsonschema-specifications==2025.4.1",
-    "jupyter-client==8.6.3",
+    "jupyter-client==8.8.0",
     "jupyter-core==5.8.1",
     "markupsafe==3.0.2",
     "matplotlib-inline==0.1.7",
