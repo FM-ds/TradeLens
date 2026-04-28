@@ -6,22 +6,43 @@ python3 -m venv trade_api_venv
 
 # 2. Activate virtual environment
 
+**On mac:**
 ```bash
 source trade_api_venv/bin/activate`
 ```
 
+**On windows:**
+```bash
+.\trade_api_venv\Scripts\activate
+```
+
 # 3. Install python dependencies (includes requests library needed for data download)
 
+**On mac:**
 ```bash
 pip install -r api/requirements_macos.txt
 ```
 
-# 4. Download data files from S3 (~1GB+)
-Creates: api/data/BACI/, api/data/prodcom/, api/data/shared/
+**On windows:**
 
+Navigate to `\api` with 
+```bash
+cd api
+```
+
+and then run install the pyproject.toml requirements with:
+```bash
+pip  install  -e .
+```
+
+# 4. Download data files from S3 (~1GB+)
+TradeLens relies on some data files too big for GitHub to track conveniently.
+
+From the root of the `\TradeLens` folder, run `data-setup.py` to download the neccesary files:
 ```bash
 python data-setup.py
 ```
+This creates: api/data/BACI/, api/data/prodcom/, api/data/shared/
 
 # Launch FastAPI server (defaults to http://localhost:8000)
 
@@ -38,9 +59,11 @@ uvicorn main:app --reload
 # Launching front end
 ## Prerequisites: Node.js 18.18+ (download from nodejs.org if needed)
 
+Verify the installation with:
 ```bash
-node --version  # verify installation
+node --version  
 ```
+which should output the current version of node installed.
 
 ## Install dependencies
 
