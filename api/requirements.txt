@@ -38,7 +38,7 @@ fastparquet==2024.11.0
 filelock @ file:///private/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_d3quwmvouf/croot/filelock_1700591194006/work
 folium==0.20.0
 fsspec==2025.5.1
-geopandas==1.1.1
+geopandas==1.1.2
 gmpy2 @ file:///Users/cbousseau/work/recipes/ci_py311/gmpy2_1677937751357/work
 h11==0.16.0
 hf-xet==1.1.5
@@ -96,7 +96,7 @@ pyOpenSSL @ file:///private/var/folders/k1/30mswbxs7r1g6zwn8y4fyt500000gp/T/abs_
 pyproj==3.7.1
 PySocks @ file:///Users/cbousseau/work/recipes/ci_py311/pysocks_1677906386870/work
 python-dateutil==2.9.0.post0
-python-multipart==0.0.20
+python-multipart==0.0.26
 pytz==2025.2
 PyYAML @ file:///private/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_a8_sdgulmz/croot/pyyaml_1698096054705/work
 pyzmq @ file:///Users/runner/miniforge3/conda-bld/pyzmq_1679317086968/work
@@ -117,17 +117,17 @@ sniffio==1.3.1
 sortedcontainers @ file:///home/conda/feedstock_root/build_artifacts/sortedcontainers_1621217038088/work
 soupsieve==2.7
 stack-data @ file:///home/conda/feedstock_root/build_artifacts/stack_data_1669632077133/work
-starlette==0.46.2
+starlette==0.49.1
 sympy @ file:///private/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_7cbpg8656h/croot/sympy_1701397648473/work
 threadpoolctl==3.6.0
 tokenizers==0.21.2
-torch==2.3.0.dev20231214
+torch==2.8.0
 torchaudio==2.2.0.dev20231214
 torchvision==0.18.0.dev20231214
 tornado @ file:///Users/runner/miniforge3/conda-bld/tornado_1695373481350/work
 tqdm @ file:///private/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_ac7zic_tin/croot/tqdm_1679561870178/work
 traitlets @ file:///home/conda/feedstock_root/build_artifacts/traitlets_1701095650114/work
-transformers==4.54.0
+transformers==5.0.0rc3
 trio @ file:///Users/runner/miniforge3/conda-bld/trio_1702536595962/work
 trio-websocket @ file:///home/conda/feedstock_root/build_artifacts/trio-websocket_1695816857197/work/dist
 truststore @ file:///private/var/folders/k1/30mswbxs7r1g6zwn8y4fyt500000gp/T/abs_42mm7e6j06/croot/truststore_1695244298716/work
