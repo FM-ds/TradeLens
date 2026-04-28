@@ -103,7 +103,7 @@ pyzmq @ file:///Users/runner/miniforge3/conda-bld/pyzmq_1679317086968/work
 referencing==0.36.2
 regex==2024.11.6
 requests @ file:///private/var/folders/k1/30mswbxs7r1g6zwn8y4fyt500000gp/T/abs_54zi68h2nb/croot/requests_1690400233316/work
-rpds-py==0.26.0
+rpds-py==0.30.0
 ruamel.yaml @ file:///Users/cbousseau/work/recipes/ci_py311/ruamel.yaml_1677934845850/work
 s3transfer==0.10.0
 safetensors==0.5.3
