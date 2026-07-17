@@ -2,7 +2,9 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 
-from main import app
+from tradelens.app import get_app
+
+app = get_app()
 
 fake_db = {
     "0" : {"year": 2022, "exporter": "123", "importer": "456", "product": "123456", "value" : "100", "quantity" :"101", "exporter_name" : "name_1", "importer_name" : "name_2", "product_description" : "description 1"},

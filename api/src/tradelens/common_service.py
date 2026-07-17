@@ -36,7 +36,7 @@ async def search_products(
         raise HTTPException(status_code=400, detail=f"Product search failed: {str(e)}")
 
 #### 2. Countries autocomplete endpoint  
-@router.get("/api/countries")
+@router.get("/countries")
 async def search_countries(
     search: Optional[str] = None,
     type: Optional[str] = Query(None, description="Filter by country type"),
