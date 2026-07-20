@@ -1,13 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { VegaLite } from 'react-vega';
 import { 
   CHART_TYPES, 
   getChartConfig, 
-  createChartSpecWithAPI, 
-  formatValue 
+  createChartSpecWithAPI
 } from '../config/chartConfig';
-import useDatasetConfig from '../hooks/useDatasetConfig';
-import useDatasetApi from '../hooks/useDatasetApi';
 
 const DataVisualization = ({ 
   data = [], 
@@ -16,8 +13,6 @@ const DataVisualization = ({
   apiUrl = null
 }) => {
   const chartConfig = getChartConfig(dataset);
-  const { config } = useDatasetConfig(dataset);
-  const api = useDatasetApi(config);
   
   // For BACI, adjust groupBy options based on trade direction
   const getAvailableGroupByFields = () => {
@@ -38,12 +33,19 @@ const DataVisualization = ({
   const [selectedMetric, setSelectedMetric] = useState(chartConfig.defaultMetric);
   const [selectedGroupBy, setSelectedGroupBy] = useState(chartConfig.defaultGroupBy);
 
+  useEffect(() => {
+    // Reset controls when the user switches query/dataset so one tab's chart state does not carry over.
+    setSelectedChartType(CHART_TYPES.LINE);
+    setSelectedMetric(chartConfig.defaultMetric);
+    setSelectedGroupBy(chartConfig.defaultGroupBy);
+  }, [query?.id, dataset, chartConfig.defaultMetric, chartConfig.defaultGroupBy]);
+
   // Build API URL for direct data fetching
   const chartApiUrl = useMemo(() => {
     console.log('DataVisualization: Received apiUrl:', apiUrl);
     if (!apiUrl) return null;
     
-    // Use the stored working API URL and just add a large page size for comprehensive data
+    // Start from the query's stored base URL and expand page size for chart-friendly fetches.
     const url = new URL(apiUrl);
     url.searchParams.set('page', '1');
     url.searchParams.set('page_size', '1000');

@@ -15,6 +15,9 @@ import { downloadCSV as exportCSV } from '../utils/csvExport';
 const TradeDataPlatform = () => {
   const [queries, setQueries] = useState([]);
   const [activeQueryId, setActiveQueryId] = useState(null);
+  // Chart URLs stored separately by query ID so updating them does not mutate
+  // the queries array and avoids triggering useTradeQuery to re-execute.
+  const [queryChartUrls, setQueryChartUrls] = useState({});
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -64,11 +67,22 @@ const TradeDataPlatform = () => {
 
   // Query management
   const handleQueryCreated = (newQuery) => {
-    setQueries(prev => [...prev, newQuery]); // Add new query to list
+    setQueries(prev => [...prev, newQuery]);
     setActiveQueryId(newQuery.id);
     setSelectedDataset(newQuery.dataset); // Ensure dataset selector updates to match new query
     setCurrentPage(1); // Reset pagination for new query
   };
+
+  useEffect(() => {
+    if (!activeQueryId || !apiUrl) return;
+
+    // Store the resolved chart URL keyed by query ID. Using separate state (not the queries array)
+    // prevents activeQuery from getting a new object reference and re-triggering useTradeQuery.
+    setQueryChartUrls(prev => {
+      if (prev[activeQueryId] === apiUrl) return prev; // already stored — no state update needed
+      return { ...prev, [activeQueryId]: apiUrl };
+    });
+  }, [activeQueryId, apiUrl]);
 
   const handleLoadQuery = (query) => {
     setActiveQueryId(query.id);
@@ -264,10 +278,12 @@ const TradeDataPlatform = () => {
                   dataset={activeQuery?.dataset || 'baci'}
                 />
                 <DataVisualization
+                  // key forces a full remount when switching query so Vega and chart controls reset.
+                  key={activeQueryId}
                   data={tradeData}
                   dataset={activeQuery?.dataset || 'baci'}
                   query={activeQuery}
-                  apiUrl={apiUrl}
+                  apiUrl={queryChartUrls[activeQueryId] || apiUrl}
                 />
                 <GeographicMapPanel />
               </div>
