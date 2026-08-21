@@ -24,7 +24,7 @@ export const CHART_CONFIGS = {
       { value: 'importer', label: 'Importer Country', field: 'importer_name' } // API returns importer names in 'importer_name' field
     ],
     defaultGroupBy: 'importer',
-    timeRange: { min: 2017, max: 2022 },
+    timeRange: { min: 2017, max: 2024 },
     colors: ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316']
   },
   prodcom: {

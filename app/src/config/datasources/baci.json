@@ -27,10 +27,10 @@
     "tradeTypeOptions": [],
     "defaultTradeType": "exports",
     "defaultStartYear": "2020",
-    "defaultEndYear": "2022",
+    "defaultEndYear": "2024",
     "yearRange": {
       "min": 2017,
-      "max": 2022
+      "max": 2024
     },
     "defaultRowsPerPage": 10,
     "params": {
