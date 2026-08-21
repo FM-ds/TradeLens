@@ -10,7 +10,6 @@ router = APIRouter(
     tags=["baci"],
 )
 
-
 #### 4. End point defining main BACI trade data query
 @router.get("", response_model=TradeDataResponse)
 async def query_trade_data(
@@ -130,7 +129,8 @@ async def query_trade_data(
                 params.extend(to_country_list * 2)  # Need params twice for OR condition
         
         # Complete queries
-        base_from = "FROM 'data/BACI/baci_hs17_2017_2022.parquet'"
+        # base_from="FROM 'data/BACI/baci_hs17_2017_2022.parquet'"
+        base_from = "FROM 'data/BACI/baci_HS17_V202601_2017_2024.parquet'"
         where_clause = f"WHERE {' AND '.join(where_conditions)}" if where_conditions else ""
         
         # Count query
