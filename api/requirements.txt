@@ -127,7 +127,7 @@ torchvision==0.18.0.dev20231214
 tornado @ file:///Users/runner/miniforge3/conda-bld/tornado_1695373481350/work
 tqdm @ file:///private/var/folders/nz/j6p8yfhx1mv_0grj5xl4650h0000gp/T/abs_ac7zic_tin/croot/tqdm_1679561870178/work
 traitlets @ file:///home/conda/feedstock_root/build_artifacts/traitlets_1701095650114/work
-transformers==4.54.0
+transformers==5.6.2
 trio @ file:///Users/runner/miniforge3/conda-bld/trio_1702536595962/work
 trio-websocket @ file:///home/conda/feedstock_root/build_artifacts/trio-websocket_1695816857197/work/dist
 truststore @ file:///private/var/folders/k1/30mswbxs7r1g6zwn8y4fyt500000gp/T/abs_42mm7e6j06/croot/truststore_1695244298716/work
