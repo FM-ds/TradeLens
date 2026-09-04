@@ -4,6 +4,39 @@ import json
 from sentence_transformers import SentenceTransformer
 
 
+item_type_2_string_name = {"countries": "country_name",
+                           "hs6_products": "description",
+                           "cn8_products": "description"}
+
+item_type_2_code_name = {"countries": "country_code",
+                         "hs6_products": "product_code",
+                         "cn8_products": "product_code"}
+
+
+def get_semantic_threshold(searchterm_length: int, min_threshold: float = 0.6) -> float:
+    """
+    Determine the minimum similarity score threshold based on the length of the search term.
+
+    Parameters
+    ----------
+    searchterm_length : int
+        Length of the search term.
+
+    Returns
+    -------
+    float
+        Minimum similarity score threshold.
+    """
+    if searchterm_length < 3:
+        return 0.9
+    elif searchterm_length == 3:
+        return 0.8
+    elif searchterm_length == 4:
+        return 0.75
+    else:
+        return min_threshold
+
+
 def load_embeddings_data(base_directory: str = "") -> dict:
     """
     Load BGE embeddings data from disk, organised by product type.
@@ -150,7 +183,8 @@ def __construct_null_response(item_type):
     return []
 
 
-def search_on_code(search_term: str, items_data: List[dict], limit: int = 50):
+def search_on_code(search_term: str, item_type: str, items_data: List[dict],
+                   limit: int = 50):
     """
     Search for items whose code field contains the search term as a substring.
 
@@ -162,6 +196,8 @@ def search_on_code(search_term: str, items_data: List[dict], limit: int = 50):
     ----------
     search_term : str
         Numeric string (digits, spaces, and dots) to look up.
+    item_type : str
+        One of ``'countries'``, ``'hs6_products'``, or ``'cn8_products'``.
     items_data : list of dict
         List of item dicts, each expected to contain a ``'code'``,
         ``'product_code'``, or ``'country_code'`` field.
@@ -177,21 +213,21 @@ def search_on_code(search_term: str, items_data: List[dict], limit: int = 50):
     matching_items = []
     search_clean = search_term.replace(" ", "").replace(".", "")
 
+    code_name = item_type_2_code_name[item_type]
+
     for item in items_data:
-        # Get the code field - try common code field names
-        code = str(item.get('code', item.get(
-            'product_code', item.get('country_code', ''))))
+        # Get the code field
+        code = str(item.get(code_name, ''))
         code_clean = code.replace(" ", "").replace(".", "")
 
         # Check if search term is a substring of the code
-        if search_clean in code_clean:
-            matching_items.append(
-                {k: v for k, v in item.items() if k != "embedding"})
+        if __match_key_starts_with_search_term(code_clean, search_clean):
+            matching_items.append(__remove_embedding_from_item(item))
 
     # Sort by code length (shorter codes first) and then by code value
     matching_items.sort(key=lambda x: (
-        len(str(x.get('code', x.get('product_code', x.get('country_code', ''))))),
-        str(x.get('code', x.get('product_code', x.get('country_code', ''))))
+        len(str(x.get(code_name, ''))),
+        str(x.get(code_name, ''))
     ))
 
     return matching_items[:limit]
@@ -199,7 +235,7 @@ def search_on_code(search_term: str, items_data: List[dict], limit: int = 50):
 
 def semantic_search(items_data: List[dict], search_term: str,
                     embedding_model, embedding_matrix: np.ndarray,
-                    min_score_threshold: float = 0.7, limit: int = 50) -> np.ndarray:
+                    min_score_threshold: float = 0.6, limit: int = 50) -> np.ndarray:
     """
     Perform cosine-similarity semantic search over a precomputed embedding matrix.
 
@@ -216,7 +252,7 @@ def semantic_search(items_data: List[dict], search_term: str,
         :func:`build_embedding_matrices`.
     min_score_threshold : float, optional
         Minimum cosine-similarity score for a result to be included.
-        Default is 0.7.
+        Default is 0.6.
     limit : int, optional
         Maximum number of results to return.  Default is 50.
 
@@ -236,9 +272,7 @@ def semantic_search(items_data: List[dict], search_term: str,
     sorted_scores = np.sort(scores)[::-1]
 
     sorted_idx = sorted_idx[sorted_scores >= min_score_threshold]
-    print(sorted_scores[:limit])
     if len(sorted_idx):
-        print("oioioioi")
         top_idx = sorted_idx[:min(limit, len(sorted_idx))]
         return [
             __remove_embedding_from_item(items_data[i])
@@ -248,21 +282,21 @@ def semantic_search(items_data: List[dict], search_term: str,
     return []
 
 
-def __remove_embedding_from_item(responce_item: dict):
+def __remove_embedding_from_item(response_item: dict):
     """
     Return a copy of an item dict with the ``'embedding'`` key removed.
 
     Parameters
     ----------
-    responce_item : dict
+    response_item : dict
         A single item dict that may contain an ``'embedding'`` key.
 
     Returns
     -------
     dict
-        Copy of *responce_item* without the ``'embedding'`` field.
+        Copy of *response_item* without the ``'embedding'`` field.
     """
-    return {k: v for k, v in responce_item.items() if k != "embedding"}
+    return {k: v for k, v in response_item.items() if k != "embedding"}
 
 
 def __match_key_starts_with_search_term(match_key: str, search_term: str):
@@ -362,12 +396,10 @@ def string_match(item_type: str, search_term: str,
         Matching items without their ``'embedding'`` field, or an empty list
         when *item_type* is unrecognised.
     """
-    if item_type == "countries":
-        return __string_match(items_data, search_term, "country_name")
-    elif item_type == "hs6_products":
-        return __string_match(items_data, search_term, "description")
-    elif item_type == "cn8_products":
-        return __string_match(items_data, search_term, "description")
+    if item_type in item_type_2_string_name:
+        return __string_match(
+            items_data, search_term, item_type_2_string_name[item_type])
+
     return []
 
 
@@ -379,7 +411,7 @@ def embedding_autocomplete(
     embedding_matrices: dict,
     type_filter: Optional[str] = None,
     limit: int = 50,
-    min_score_threshold: float = 0.7,
+    min_score_threshold: float = 0.6,
 ) -> List[dict]:
     """
     Core autocomplete function using embedding similarity search.
@@ -409,7 +441,7 @@ def embedding_autocomplete(
         Maximum number of results to return.  Default is 50.
     min_score_threshold : float, optional
         Minimum similarity score passed to :func:`semantic_search`.
-        Default is 0.7.
+        Default is 0.6.
 
     Returns
     -------
@@ -452,16 +484,34 @@ def embedding_autocomplete(
     is_code_search = search_term.replace(" ", "").replace(".", "").isdigit()
 
     if is_code_search:
+        print(f"Performing code-based search for '{search_term}' in '{item_type}'")
         return search_on_code(search_term, items_data, limit=limit)
     else:
-        valid_response = semantic_search(
-            items_data, search_term, embedding_model,
-            embedding_matrix,
-            min_score_threshold=min_score_threshold,
-            limit=limit)
-
-        if not len(valid_response):
+        if len(search_term) <= 2:
             valid_response = string_match(item_type, search_term, items_data)
+        else:
+            semantic_score_threshold = get_semantic_threshold(
+                len(search_term),
+                min_threshold=min_score_threshold)
+
+            print(
+                f"Performing semantic search for '{search_term}' in '{item_type}' with threshold {semantic_score_threshold}")
+
+            valid_response = semantic_search(
+                items_data, search_term, embedding_model,
+                embedding_matrix,
+                min_score_threshold=semantic_score_threshold,
+                limit=limit)
+
+            if not len(valid_response):
+                print(
+                    f"No semantic search results for '{search_term}' in '{item_type}',"
+                    " falling back to string match")
+                valid_response = string_match(item_type, search_term, items_data)
+            else:
+                print(
+                    f"Found {len(valid_response)} semantic search results for "
+                    f"'{search_term}' in '{item_type}'")
 
         if len(valid_response):
             return valid_response
