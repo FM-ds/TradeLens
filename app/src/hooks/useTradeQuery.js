@@ -17,11 +17,15 @@ const useTradeQuery = (query, currentPage = 1, rowsPerPage = 10) => {
       setTradeData([]);
       setTradeDataTotal(0);
       setTradeDataTotalPages(1);
+      // Clear the chart source whenever there is no active query to prevent stale plots.
+      setApiUrl('');
       return;
     }
 
     const executeQuery = async () => {
       setTradeDataLoading(true);
+      // Clear first so the previous query's chart URL cannot leak into the next render.
+      setApiUrl('');
 
       try {
         let queryParams;
@@ -94,22 +98,25 @@ const useTradeQuery = (query, currentPage = 1, rowsPerPage = 10) => {
           url.searchParams.delete('page_size');
           const cleanUrl = url.toString();
           console.log('useTradeQuery: Storing API URL:', cleanUrl);
+          // The table uses the paged response, but charts need a reusable base URL per query.
           setApiUrl(cleanUrl);
         } else {
           console.log('useTradeQuery: No apiUrl in result:', result);
+          setApiUrl('');
         }
       } catch (error) {
         console.error('Failed to execute trade query:', error);
         setTradeData([]);
         setTradeDataTotal(0);
         setTradeDataTotalPages(1);
+        setApiUrl('');
       } finally {
         setTradeDataLoading(false);
       }
     };
 
     executeQuery();
-  }, [query, currentPage, rowsPerPage, config, api.executeTradeQuery, api.getCountryCodeByName]);
+  }, [query, currentPage, rowsPerPage, config, api.executeTradeQuery, api.executeProdcomQuery, api.getCountryCodeByName]);
 
   return {
     tradeData,
