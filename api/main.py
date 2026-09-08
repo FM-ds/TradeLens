@@ -1,13 +1,34 @@
 from fastapi import FastAPI
-
 import uvicorn
 import json
+import logging
+import copy
 
 from contextlib import asynccontextmanager
+from uvicorn.config import LOGGING_CONFIG
 
 from tradelens.app import get_app
 
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s"
+)
+logger = logging.getLogger("tradelens.main")
+
+APP_LOGGING_CONFIG = copy.deepcopy(LOGGING_CONFIG)
+APP_LOGGING_CONFIG["disable_existing_loggers"] = False
+APP_LOGGING_CONFIG["formatters"]["default"]["fmt"] = (
+    "%(asctime)s | %(levelprefix)s | %(name)s | %(message)s"
+)
+APP_LOGGING_CONFIG["loggers"]["tradelens"] = {
+    "handlers": ["default"],
+    "level": "INFO",
+    "propagate": False,
+}
+
 app = get_app()
+
 
 # Define countries and products globally from locally saved data files
 # Is this used by the front end? It doesn't seem to be used by the backend.
@@ -33,7 +54,16 @@ async def read_root() -> dict:
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    logger.info("Starting TradeLens API with auto-reload enabled")
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True,
+        log_level="info",
+        access_log=True,
+        log_config=APP_LOGGING_CONFIG,
+    )
 
 # ------------------
 #  OLD QUERY NOTES, POSSIBLY USEFUL FOR TESTING
