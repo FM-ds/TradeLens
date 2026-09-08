@@ -157,7 +157,7 @@ async def query_trade_data(
         ORDER BY year DESC, value DESC
         LIMIT ? OFFSET ?
         """
-        
+
         conn = duckdb.connect()
         
         # Use a separate params list for count and data queries
