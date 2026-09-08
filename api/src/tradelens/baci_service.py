@@ -4,6 +4,10 @@ from fastapi import APIRouter, Query, HTTPException
 from typing import List
 from datetime import datetime
 import duckdb
+import logging
+
+
+logger = logging.getLogger("tradelens.baci_service")
 
 router = APIRouter(
     prefix="/api/trade-query",
@@ -24,6 +28,17 @@ async def query_trade_data(
     page_size: int = Query(100, ge=10, le=10000)
 ):
     """Returns trade data based on query parameters."""
+    logger.info(
+        "Trade query request: trade_type=%s product_codes=%s from_country=%s to_country=%s year_from=%d year_to=%d page=%d page_size=%d",
+        trade_type,
+        product_codes,
+        from_country,
+        to_country,
+        year_from,
+        year_to,
+        page,
+        page_size,
+    )
     
     start_time = datetime.now()
     
@@ -191,7 +206,7 @@ async def query_trade_data(
                 )
                 data.append(trade_record)
             except (IndexError, ValueError, TypeError) as e:
-                print(f"Error converting row {row}: {e}")
+                logger.warning("Error converting BACI row %r: %s", row, e)
                 continue
         
         # Time the query for performance analysis
@@ -208,4 +223,5 @@ async def query_trade_data(
         )
 
     except Exception as e:
+        logger.exception("Trade query failed")
         raise HTTPException(status_code=400, detail=f"Query failed: {str(e)}")
