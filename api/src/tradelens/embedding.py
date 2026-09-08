@@ -1,16 +1,19 @@
 import numpy as np
 from typing import Optional, List
 import json
+import logging
 from sentence_transformers import SentenceTransformer
 
+
+logger = logging.getLogger("tradelens.embedding")
 
 item_type_2_string_name = {"countries": "country_name",
                            "hs6_products": "description",
                            "cn8_products": "description"}
 
-item_type_2_code_name = {"countries": "country_code",
-                         "hs6_products": "product_code",
-                         "cn8_products": "product_code"}
+item_type_2_code_name = {"countries": "code",
+                         "hs6_products": "code",
+                         "cn8_products": "code"}
 
 
 def get_semantic_threshold(searchterm_length: int, min_threshold: float = 0.6) -> float:
@@ -59,25 +62,38 @@ def load_embeddings_data(base_directory: str = "") -> dict:
 
     # Load BGE embeddings
     try:
+        logger.info("Loading BGE embeddings from data/shared")
         with open(f"{base_directory}data/shared/country_embeddings_bge_dump.json", "r") as f:
             embeddings_data["countries"] = json.load(f)
         with open(f"{base_directory}data/shared/product_embeddings_bge_dump.json", "r") as f:
             embeddings_data["hs6_products"] = json.load(f)
         with open(f"{base_directory}data/shared/cn8_division_industry_product_embeddings_bge.json", "r") as f:
             embeddings_data["cn8_products"] = json.load(f)
+        logger.info(
+            "Loaded BGE embeddings: countries=%d hs6_products=%d cn8_products=%d",
+            len(embeddings_data["countries"]),
+            len(embeddings_data["hs6_products"]),
+            len(embeddings_data["cn8_products"])
+        )
     except FileNotFoundError as e:
-        print(f"Warning: Could not load BGE embeddings: {e}")
+        logger.warning("Could not load BGE embeddings: %s", e)
         # Fallback to old embeddings if BGE embeddings are not available
         try:
+            logger.info("Loading fallback embeddings from data/shared")
             with open(f"{base_directory}data/shared/country_embeddings.json", "r") as f:
                 embeddings_data["countries"] = json.load(f)
             with open(f"{base_directory}data/shared/HS6_product_embeddings.json", "r") as f:
                 embeddings_data["hs6_products"] = json.load(f)
             with open(f"{base_directory}data/shared/cn8_division_industry_product_embeddings.json", "r") as f:
                 embeddings_data["cn8_products"] = json.load(f)
-            print("Loaded fallback embeddings (non-BGE)")
+            logger.info(
+                "Loaded fallback embeddings: countries=%d hs6_products=%d cn8_products=%d",
+                len(embeddings_data["countries"]),
+                len(embeddings_data["hs6_products"]),
+                len(embeddings_data["cn8_products"])
+            )
         except FileNotFoundError as fallback_error:
-            print(f"Error: Could not load any embeddings: {fallback_error}")
+            logger.error("Could not load any embeddings: %s", fallback_error)
 
     return embeddings_data
 
@@ -130,9 +146,16 @@ def setup_embeddings(embeddings_data: dict):
         :func:`build_embedding_matrices`.
     """
     # Load BGE embedding model for better semantic search performance
+    logger.info("Loading embedding model: BAAI/bge-small-en-v1.5")
     embedding_model = SentenceTransformer('BAAI/bge-small-en-v1.5')
 
     embedding_matrices = build_embedding_matrices(embeddings_data)
+    logger.info(
+        "Prepared embedding matrices: countries=%d hs6_products=%d cn8_products=%d",
+        embedding_matrices["countries"].shape[0] if embedding_matrices["countries"].size else 0,
+        embedding_matrices["hs6_products"].shape[0] if embedding_matrices["hs6_products"].size else 0,
+        embedding_matrices["cn8_products"].shape[0] if embedding_matrices["cn8_products"].size else 0
+    )
 
     return embedding_model, embedding_matrices
 
@@ -266,13 +289,20 @@ def semantic_search(items_data: List[dict], search_term: str,
     search_emb = embedding_model.encode([search_term])[0]
     norms = np.linalg.norm(embedding_matrix, axis=1) * \
         np.linalg.norm(search_emb)
+
+    # get cosine similarity scores for all possible items given the search term
     scores = np.dot(embedding_matrix, search_emb) / norms
 
+    # sort the scores in descending order and get the indices of the sorted scores
     sorted_idx = np.argsort(scores)[::-1]
     sorted_scores = np.sort(scores)[::-1]
 
+    # filter out the index of items below the minimum score threshold
     sorted_idx = sorted_idx[sorted_scores >= min_score_threshold]
+
     if len(sorted_idx):
+        # return the top N items (up to *limit*) that meet the threshold,
+        # without their embeddings
         top_idx = sorted_idx[:min(limit, len(sorted_idx))]
         return [
             __remove_embedding_from_item(items_data[i])
@@ -449,6 +479,9 @@ def embedding_autocomplete(
         Matching items without their ``'embedding'`` field, or an empty
         list when no items are found.
     """
+    # for each available item type [countries, hs6_products, cn8_products]
+    # there is a list of acceptable values that can be returned.
+    # items_data contains the list of items for the requested item_type.
     items_data = get_embeddings_data_for_item_type(embeddings_data, item_type)
 
     if not items_data:
@@ -483,18 +516,27 @@ def embedding_autocomplete(
     # Check if search term is numeric (code search) - allow digits, spaces, and dots
     is_code_search = search_term.replace(" ", "").replace(".", "").isdigit()
 
+    # carry out specific string matching on the code (country code or product code) 
+    # if the search term is numeric
     if is_code_search:
-        print(f"Performing code-based search for '{search_term}' in '{item_type}'")
-        return search_on_code(search_term, items_data, limit=limit)
+        logger.info(f"Performing code-based search for '{search_term}' in '{item_type}'")
+        return search_on_code(search_term, item_type, items_data, limit=limit)
     else:
+        # for short search terms (2 characters or fewer), use string matching;
+        # for longer terms, use semantic search
         if len(search_term) <= 2:
+            logger.info(f"Performing string-based search for '{search_term}' in '{item_type}'")
             valid_response = string_match(item_type, search_term, items_data)
         else:
+            # Determine the semantic score threshold based on the length of the search term.
+            # shorter search terms require a higher threshold. Relationship between search_term length
+            # and threshold is defined in get_semantic_threshold function. Could be moved to config if needed.
+            logger.info(f"Performing semantic search for '{search_term}' in '{item_type}'")
             semantic_score_threshold = get_semantic_threshold(
                 len(search_term),
                 min_threshold=min_score_threshold)
 
-            print(
+            logger.info(
                 f"Performing semantic search for '{search_term}' in '{item_type}' with threshold {semantic_score_threshold}")
 
             valid_response = semantic_search(
@@ -503,17 +545,22 @@ def embedding_autocomplete(
                 min_score_threshold=semantic_score_threshold,
                 limit=limit)
 
+            # if semantic search returns no results, fall back to string matching
             if not len(valid_response):
-                print(
+                logger.info(
                     f"No semantic search results for '{search_term}' in '{item_type}',"
                     " falling back to string match")
                 valid_response = string_match(item_type, search_term, items_data)
             else:
-                print(
+                logger.info(
                     f"Found {len(valid_response)} semantic search results for "
                     f"'{search_term}' in '{item_type}'")
 
+        # return results if any were found through string matching or semantic search,
+        # otherwise return an empty list.
         if len(valid_response):
+            logger.info(f"Found {len(valid_response)} results for '{search_term}' in '{item_type}'")
             return valid_response
         else:
+            logger.info(f"No response found for '{search_term}' in '{item_type}'")
             return __construct_null_response(item_type)
