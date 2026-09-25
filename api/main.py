@@ -3,7 +3,7 @@ import uvicorn
 import json
 import logging
 import copy
-
+from tradelens.data_loading import stringify_json_values
 from contextlib import asynccontextmanager
 from uvicorn.config import LOGGING_CONFIG
 
@@ -29,14 +29,13 @@ APP_LOGGING_CONFIG["loggers"]["tradelens"] = {
 
 app = get_app()
 
-
 # Define countries and products globally from locally saved data files
 # Is this used by the front end? It doesn't seem to be used by the backend.
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # ---- Startup ----
     with open("data/shared/HS6_products.json") as f:
-        app.state.PRODUCTS = json.load(f)
+        app.state.PRODUCTS = stringify_json_values(json.load(f), code_width=6)
 
     with open("data/shared/countries.json") as f:
         app.state.COUNTRIES = json.load(f)
@@ -45,7 +44,6 @@ async def lifespan(app: FastAPI):
 
     # ---- Shutdown (optional cleanup) ----
     # e.g. close DB connections if needed
-
 
 #### End point to define root
 @app.get("/", tags=["root"])
