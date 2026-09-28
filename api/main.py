@@ -3,7 +3,7 @@ import uvicorn
 import json
 import logging
 import copy
-from tradelens.data_loading import stringify_json_values
+from tradelens.data_loading import prepend_code_with_0
 from contextlib import asynccontextmanager
 from uvicorn.config import LOGGING_CONFIG
 
@@ -35,7 +35,7 @@ app = get_app()
 async def lifespan(app: FastAPI):
     # ---- Startup ----
     with open("data/shared/HS6_products.json") as f:
-        app.state.PRODUCTS = stringify_json_values(json.load(f), code_width=6)
+        app.state.PRODUCTS = prepend_code_with_0(json.load(f), code_width=6)
 
     with open("data/shared/countries.json") as f:
         app.state.COUNTRIES = json.load(f)
