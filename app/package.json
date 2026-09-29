@@ -18,7 +18,7 @@
     "preview:cf": "npm run build && wrangler pages dev dist"
   },
   "dependencies": {
-    "@tailwindcss/vite": "^4.1.10",
+    "@tailwindcss/vite": "^4.2.4",
     "lucide-react": "^0.522.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
