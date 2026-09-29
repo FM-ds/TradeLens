@@ -7,6 +7,7 @@ __pycache__/
 pinecone/
 trade_api_env/
 venv/
+api/.pytest_cache/
 
 # Embeddings and data files
 *.parquet
