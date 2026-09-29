@@ -3,6 +3,7 @@ from fastapi import APIRouter, Query, HTTPException
 from typing import Optional, List
 import duckdb
 import datetime
+from datetime import datetime
 
 from tradelens.data_models import ProdcomRecord, ProdcomDataResponse
 
