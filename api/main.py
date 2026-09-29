@@ -1,11 +1,31 @@
 from fastapi import FastAPI
-
 import uvicorn
 import json
-
+import logging
+import copy
+from tradelens.data_loading import prepend_code_with_0
 from contextlib import asynccontextmanager
+from uvicorn.config import LOGGING_CONFIG
 
 from tradelens.app import get_app
+
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s"
+)
+logger = logging.getLogger("tradelens.main")
+
+APP_LOGGING_CONFIG = copy.deepcopy(LOGGING_CONFIG)
+APP_LOGGING_CONFIG["disable_existing_loggers"] = False
+APP_LOGGING_CONFIG["formatters"]["default"]["fmt"] = (
+    "%(asctime)s | %(levelprefix)s | %(name)s | %(message)s"
+)
+APP_LOGGING_CONFIG["loggers"]["tradelens"] = {
+    "handlers": ["default"],
+    "level": "INFO",
+    "propagate": False,
+}
 
 app = get_app()
 
@@ -15,7 +35,7 @@ app = get_app()
 async def lifespan(app: FastAPI):
     # ---- Startup ----
     with open("data/shared/HS6_products.json") as f:
-        app.state.PRODUCTS = json.load(f)
+        app.state.PRODUCTS = prepend_code_with_0(json.load(f), code_width=6)
 
     with open("data/shared/countries.json") as f:
         app.state.COUNTRIES = json.load(f)
@@ -25,7 +45,6 @@ async def lifespan(app: FastAPI):
     # ---- Shutdown (optional cleanup) ----
     # e.g. close DB connections if needed
 
-
 #### End point to define root
 @app.get("/", tags=["root"])
 async def read_root() -> dict:
@@ -33,7 +52,16 @@ async def read_root() -> dict:
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    logger.info("Starting TradeLens API with auto-reload enabled")
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True,
+        log_level="info",
+        access_log=True,
+        log_config=APP_LOGGING_CONFIG,
+    )
 
 # ------------------
 #  OLD QUERY NOTES, POSSIBLY USEFUL FOR TESTING
