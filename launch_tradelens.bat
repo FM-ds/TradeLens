@@ -9,6 +9,8 @@ set "APP_DIR=%ROOT%\app"
 
 set "API_URL=http://127.0.0.1:8000/docs"
 
+echo Using API URL: %API_URL%
+
 if not exist "%API_DIR%\main.py" (
     echo [ERROR] Could not find API folder at "%API_DIR%".
     exit /b 1
@@ -73,7 +75,7 @@ goto :wait_for_api
 
 :start_frontend
 echo Starting frontend terminal...
-start "TradeLens Frontend" cmd /k "cd /d ""%APP_DIR%"" && npm run dev"
+start "TradeLens Frontend" cmd /k "cd /d ""%APP_DIR%"" && npm run dev -- --open"
 
 echo All launch commands have been issued.
 endlocal
