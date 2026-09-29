@@ -19,9 +19,12 @@ if not exist "%APP_DIR%\package.json" (
 
 set "ACTIVATE_SCRIPT="
 for %%F in (
-    "%API_DIR%\venv\Scripts\activate.bat"
     "%API_DIR%\trade_api_venv\Scripts\activate.bat"
+    "%API_DIR%\venv\Scripts\activate.bat"
+    "%API_DIR%\.venv\Scripts\activate.bat"
     "%ROOT%\trade_api_venv\Scripts\activate.bat"
+    "%ROOT%\venv\Scripts\activate.bat"
+    "%ROOT%\.venv\Scripts\activate.bat"
 ) do (
     if exist "%%~fF" (
         set "ACTIVATE_SCRIPT=%%~fF"
