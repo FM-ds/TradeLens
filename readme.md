@@ -77,4 +77,4 @@ From `\api`, launch main.py with uvicorn
 ```bash
 uvicorn  main:app  --reload
 ```
-2. launch front end by opening a terminal from `/app` and entering `npm run dev` to start the dev server.
+2. launch front end by opening a terminal from `/app` and entering `npm run dev -- --open` to start the dev server and open front end.
