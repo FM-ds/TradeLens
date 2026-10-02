@@ -88,7 +88,7 @@ pure-eval @ file:///home/conda/feedstock_root/build_artifacts/pure_eval_16428759
 pyarrow==20.0.0
 pycosat @ file:///private/var/folders/k1/30mswbxs7r1g6zwn8y4fyt500000gp/T/abs_3eg8vdcs6z/croot/pycosat_1696536519213/work
 pycparser @ file:///tmp/build/80754af9/pycparser_1636541352034/work
-pydantic==2.11.7
+pydantic==2.13.5
 pydantic_core==2.33.2
 Pygments @ file:///home/conda/feedstock_root/build_artifacts/pygments_1700607939962/work
 pyogrio==0.11.0
