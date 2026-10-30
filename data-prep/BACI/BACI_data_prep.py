@@ -10,6 +10,8 @@
 
 import pandas as pd
 from pathlib import Path
+import json
+from tempfile import NamedTemporaryFile
 
 # Locate the repository root from this script's location, independently of the
 # working directory. __file__ is available when running as a Python script,
@@ -26,6 +28,7 @@ data_version="HS17"
 data_root=f"data/BACI_{data_version}_{data_ext}"
 start_year=2017
 end_year=2024
+dataset_store_path = "datasets.json" # path to stored dataset metadata
 
 # Include the release and year range in the output filename so datasets can be
 # distinguished. Saving replaces any existing file at this exact path.
@@ -80,3 +83,52 @@ all_data['product_description'] = all_data['product'].map(product_names['descrip
 # layer. Exclude the temporary pandas row index from the saved dataset.
 print(f"Saving data to {save_loc}...")
 all_data.to_parquet(save_loc, index=False)
+
+# Register the dataset only after the Parquet file has been saved successfully.
+metadata_path = Path(save_loc).parent / dataset_store_path
+
+with metadata_path.open(encoding="utf-8") as file:
+    metadata = json.load(file)
+
+if not isinstance(metadata, dict) or not isinstance(metadata.get("datasets"), dict):
+    raise ValueError(f"{metadata_path}: expected a registry with a datasets object")
+
+# Match the identifiers already used in the registry.
+dataset_id = f"baci_{data_version.lower()}_{data_ext.lower()}"
+datasets = metadata["datasets"]
+
+# Preserve existing descriptions, notes, and other manually maintained fields.
+entry = datasets.setdefault(dataset_id, {})
+entry.setdefault(
+    "description",
+    f"BACI {data_version} classification, {data_ext} release",
+)
+entry.update({
+    "classification": data_version,
+    "release": data_ext,
+    "year_min": start_year,
+    "year_max": end_year,
+    "file": Path(save_loc).name,
+})
+
+# Write a temporary file beside the registry, then replace it only once the
+# complete JSON has been written. Leave active_dataset unchanged.
+temporary_path = None
+try:
+    with NamedTemporaryFile(
+        mode="w",
+        encoding="utf-8",
+        dir=metadata_path.parent,
+        suffix=".tmp",
+        delete=False,
+    ) as file:
+        temporary_path = Path(file.name)
+        json.dump(metadata, file, indent=2, ensure_ascii=False)
+        file.write("\n")
+
+    temporary_path.replace(metadata_path)
+finally:
+    if temporary_path is not None:
+        temporary_path.unlink(missing_ok=True)
+
+print(f"Registered dataset {dataset_id} in {metadata_path}")
