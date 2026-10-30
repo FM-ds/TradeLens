@@ -1,6 +1,6 @@
 from tradelens.data_models import TradeRecord, TradeDataResponse, ProdcomRecord
 
-from fastapi import APIRouter, Query, HTTPException
+from fastapi import APIRouter, Query, HTTPException, Depends
 from typing import List
 from datetime import datetime
 import duckdb
@@ -31,6 +31,11 @@ async def get_baci_metadata() -> dict[str, int]:
         "year_max": BACI_YEAR_MAX,
     }
 
+# Expose data path
+def get_baci_data_path() -> str:
+    """Provide the configured dataset path; tests can override this dependency."""
+    return str(BACI_PARQUET_PATH)
+
 #### 4. End point defining main BACI trade data query
 @router.get("", response_model=TradeDataResponse)
 async def query_trade_data(
@@ -49,7 +54,8 @@ async def query_trade_data(
         le=BACI_YEAR_MAX,
     ),
     page: int = Query(1, ge=1),
-    page_size: int = Query(100, ge=10, le=10000)
+    page_size: int = Query(100, ge=10, le=10000),
+    data_path: str = Depends(get_baci_data_path),
 ):
     """Returns trade data based on query parameters."""
     logger.info(
@@ -184,7 +190,7 @@ async def query_trade_data(
         
         # The count query starts with the file path, followed by WHERE values.
         # trade_flow is excluded because the count query does not select it.
-        count_params = [str(BACI_PARQUET_PATH)] + params[1:]
+        count_params = [str(data_path)] + params[1:]
         
         # Data query
         offset = (page - 1) * page_size
@@ -202,7 +208,7 @@ async def query_trade_data(
         # Match placeholder order: SELECT trade_flow, FROM file path,
         # WHERE values, then LIMIT and OFFSET.
         data_params = (
-            [params[0], str(BACI_PARQUET_PATH)]
+            [params[0], str(data_path)]
             + params[1:]
             + [page_size, offset]
         )
