@@ -1,14 +1,28 @@
+import useDatasetConfig from '../hooks/useDatasetConfig';
+
 const DatasetSelector = ({ 
   availableDatasets,
   selectedDataset,
   onDatasetChange
 }) => {
+    const {
+    config: baciConfig,
+    loading: baciLoading,
+    error: baciError
+  } = useDatasetConfig('baci');
+
+  const baciYearRange = baciLoading
+    ? 'Loading year range...'
+    : baciError
+      ? `Year range unavailable: ${baciError}`
+      : `${baciConfig.query.yearRange.min}–${baciConfig.query.yearRange.max}`;
+      
   const datasetInfo = {
     baci: {
       id: 'baci',
       name: 'BACI',
       title: 'Trade flows',
-      yearRange: '2017-2022',
+      yearRange: baciYearRange,
       description: 'Annual trade flows for HS6 products.',
       speed: 'Fast',
       speedIcon: '⚡',
