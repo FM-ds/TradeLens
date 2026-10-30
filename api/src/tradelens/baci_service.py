@@ -5,7 +5,11 @@ from typing import List
 from datetime import datetime
 import duckdb
 import logging
-
+from tradelens.config import (
+    BACI_PARQUET_PATH,
+    BACI_YEAR_MIN,
+    BACI_YEAR_MAX,
+)
 
 logger = logging.getLogger("tradelens.baci_service")
 
@@ -14,6 +18,19 @@ router = APIRouter(
     tags=["baci"],
 )
 
+# Expose baci metadata to front end
+@router.get("/metadata")
+async def get_baci_metadata() -> dict[str, int]:
+    """Return the active BACI dataset's inclusive year bounds.
+
+    The frontend uses these bounds to populate year selectors and validate
+    requests against the same configuration used by the query endpoint.
+    """
+    return {
+        "year_min": BACI_YEAR_MIN,
+        "year_max": BACI_YEAR_MAX,
+    }
+
 #### 4. End point defining main BACI trade data query
 @router.get("", response_model=TradeDataResponse)
 async def query_trade_data(
@@ -21,8 +38,16 @@ async def query_trade_data(
     product_codes: str = Query("950300", description="Comma-separated product codes"),
     from_country: str = Query("156", description="Origin country"),
     to_country: str = Query("everywhere", description="Destination country"),
-    year_from: int = Query(2020, ge=2000, le=2024),
-    year_to: int = Query(2022, ge=2000, le=2024),
+    year_from: int = Query(
+        BACI_YEAR_MIN,
+        ge=BACI_YEAR_MIN,
+        le=BACI_YEAR_MAX,
+    ),
+    year_to: int = Query(
+        BACI_YEAR_MAX,
+        ge=BACI_YEAR_MIN,
+        le=BACI_YEAR_MAX,
+    ),
     page: int = Query(1, ge=1),
     page_size: int = Query(100, ge=10, le=10000)
 ):
@@ -144,8 +169,7 @@ async def query_trade_data(
                 params.extend(to_country_list * 2)  # Need params twice for OR condition
         
         # Complete queries
-        # base_from="FROM 'data/BACI/baci_hs17_2017_2022.parquet'"
-        base_from = "FROM 'data/BACI/baci_HS17_V202601_2017_2024.parquet'"
+        base_from = "FROM read_parquet(?)" # Bind the configured file path as a query parameter.
         where_clause = f"WHERE {' AND '.join(where_conditions)}" if where_conditions else ""
         
         # Count query
@@ -155,12 +179,12 @@ async def query_trade_data(
                 SELECT 1 {base_from} {where_clause} {group_clause}
             ) subq
             """
-            #count_params = params[1:]
         else:
             count_query = f"SELECT COUNT(*) as total {base_from} {where_clause}"
         
-        # Remove trade_flow parameter for count query (it's only used in SELECT)
-        count_params = params[1:]
+        # The count query starts with the file path, followed by WHERE values.
+        # trade_flow is excluded because the count query does not select it.
+        count_params = [str(BACI_PARQUET_PATH)] + params[1:]
         
         # Data query
         offset = (page - 1) * page_size
@@ -175,9 +199,14 @@ async def query_trade_data(
 
         conn = duckdb.connect()
         
-        # Use a separate params list for count and data queries
-        data_params = list(params) + [page_size, offset]  # Add LIMIT and OFFSET for data query
-        
+        # Match placeholder order: SELECT trade_flow, FROM file path,
+        # WHERE values, then LIMIT and OFFSET.
+        data_params = (
+            [params[0], str(BACI_PARQUET_PATH)]
+            + params[1:]
+            + [page_size, offset]
+        )
+
         total_result = conn.execute(count_query, count_params).fetchone()
         total_records = total_result[0] if total_result else 0
         

@@ -1,0 +1,22 @@
+{
+  "active_dataset": "baci_hs17_development",
+  "datasets": {
+    "baci_hs17_v202601": {
+      "description": "BACI HS 2017 classification, January 2026 release",
+      "classification": "HS17",
+      "release": "V202601",
+      "year_min": 2017,
+      "year_max": 2024,
+      "file": "baci_HS17_V202601_2017_2024.parquet"
+    },
+    "baci_hs17_development": {
+      "description": "Original development dataset covering 2017–2022",
+      "classification": "HS17",
+      "release": "V202501",
+      "release_verified": false,
+      "year_min": 2017,
+      "year_max": 2022,
+      "file": "baci_hs17_2017_2022.parquet"
+    }
+  }
+}
