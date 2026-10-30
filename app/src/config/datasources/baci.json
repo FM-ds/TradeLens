@@ -5,7 +5,8 @@
   "endpoints": {
     "products": "/api/products",
     "countries": "/api/countries",
-    "tradeQuery": "/api/trade-query"
+    "tradeQuery": "/api/trade-query",
+    "metadata": "/api/trade-query/metadata"
   },
   "product": {
     "searchParam": "search",

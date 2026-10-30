@@ -151,7 +151,10 @@ const BaciSearchInterface = ({
           >
             CEPII.fr
           </a>
-          . The data in the Beta version ranges from 2017-2022 and is based on HS17 product classifications. Note that data may be missing where data values have been suppressed.
+                    . The active dataset covers {config.query.yearRange.min}
+          {'–'}{config.query.yearRange.max} and is based on HS17 product
+          classifications. Note that data may be missing where data values
+          have been suppressed.
         </p>
       </div>
       
