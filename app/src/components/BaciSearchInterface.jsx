@@ -25,8 +25,45 @@ const BaciSearchInterface = ({
   const [showToCountrySuggestions, setShowToCountrySuggestions] = useState(false);
   
   const [tradeType, setTradeType] = useState(initialState.tradeType || 'exports');
-  const [startYear, setStartYear] = useState(initialState.startYear || '2020');
-  const [endYear, setEndYear] = useState(initialState.endYear || '2022');
+
+  // New searches now default to the full metadata range. 
+  // # Saved values remain unchanged—even when invalid—until the user corrects them.
+  const [selectedStartYear, setStartYear] = useState(
+    initialState.startYear == null ? null : String(initialState.startYear)
+  );
+  const [selectedEndYear, setEndYear] = useState(
+    initialState.endYear == null ? null : String(initialState.endYear)
+  );
+
+  const yearRange = config?.query.yearRange;
+
+  const startYear = selectedStartYear ?? (
+    yearRange ? String(yearRange.min) : ''
+  );
+  const endYear = selectedEndYear ?? (
+    yearRange ? String(yearRange.max) : ''
+  );
+
+// Year format validation 
+let yearError = '';
+
+if (yearRange) {
+  const start = Number(startYear);
+  const end = Number(endYear);
+
+  if (
+    start < yearRange.min ||
+    start > yearRange.max ||
+    end < yearRange.min ||
+    end > yearRange.max
+  ) {
+    yearError =
+      `The active BACI dataset covers ${yearRange.min}–${yearRange.max}. ` +
+      'Choose years within this range.';
+  } else if (start > end) {
+    yearError = 'The start year must not exceed the end year.';
+  }
+}
 
   // API calls
   useEffect(() => {
