@@ -9,7 +9,11 @@ const useDatasetApi = (config) => {
 
   // Load country code map on config change
   useEffect(() => {
-    if (!config) return;
+    // PRODCOM has no country endpoint, so skip the BACI-only lookup setup.
+    if (!config?.endpoints?.countries || !config.country) {
+      setCountryCodeMap({});
+      return;
+    }
 
     const loadCountryCodeMap = async () => {
       try {
@@ -116,7 +120,7 @@ const useDatasetApi = (config) => {
   }, [config]);
 
   const executeProdcomQuery = useCallback(async (queryParams, page = 1, pageSize = 10) => {
-    if (!config) return { data: [], total_records: 0, total_pages: 1 };
+    if (!config) return { data: [], total_records: 0, total_pages: 1, apiUrl: '' };
 
     try {
       const params = new URLSearchParams({
@@ -128,12 +132,14 @@ const useDatasetApi = (config) => {
         [config.query.params.page_size]: pageSize
       });
 
-      const response = await fetch(`${config.apiBase}${config.endpoints.tradeQuery}?${params}`);
+      const fullUrl = `${config.apiBase}${config.endpoints.tradeQuery}?${params}`;
+      const response = await fetch(fullUrl);
       const data = await response.json();
-      return data;
+      // Return the exact query URL so the chart can refetch the same result set later.
+      return { ...data, apiUrl: fullUrl };
     } catch (error) {
       console.error('Failed to execute PRODCOM query:', error);
-      return { data: [], total_records: 0, total_pages: 1 };
+      return { data: [], total_records: 0, total_pages: 1, apiUrl: '' };
     }
   }, [config]);
 

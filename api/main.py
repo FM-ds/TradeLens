@@ -1,35 +1,49 @@
 from fastapi import FastAPI
-
 import uvicorn
 import json
+import logging
+import copy
+from tradelens.data_loading import prepend_code_with_0
+from contextlib import asynccontextmanager
+from uvicorn.config import LOGGING_CONFIG
 
-from fastapi.middleware.cors import CORSMiddleware
+from tradelens.app import get_app
 
-from tradelens.baci_service import router as baci_router # further sorting of routers required
-from tradelens.common_service import router as common_router
-from tradelens.prodcom_service import router as prodcom_router
 
-app = FastAPI()
-
-app.include_router(baci_router)
-app.include_router(common_router)
-app.include_router(prodcom_router)
-
-# Add Middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s"
 )
+logger = logging.getLogger("tradelens.main")
+
+APP_LOGGING_CONFIG = copy.deepcopy(LOGGING_CONFIG)
+APP_LOGGING_CONFIG["disable_existing_loggers"] = False
+APP_LOGGING_CONFIG["formatters"]["default"]["fmt"] = (
+    "%(asctime)s | %(levelprefix)s | %(name)s | %(message)s"
+)
+APP_LOGGING_CONFIG["loggers"]["tradelens"] = {
+    "handlers": ["default"],
+    "level": "INFO",
+    "propagate": False,
+}
+
+app = get_app()
 
 # Define countries and products globally from locally saved data files
-with open("data/shared/HS6_products.json", "r") as f:
-    PRODUCTS = json.load(f)
-with open("data/shared/countries.json", "r") as f:
-    COUNTRIES = json.load(f)
+# Is this used by the front end? It doesn't seem to be used by the backend.
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # ---- Startup ----
+    with open("data/shared/HS6_products.json") as f:
+        app.state.PRODUCTS = prepend_code_with_0(json.load(f), code_width=6)
 
+    with open("data/shared/countries.json") as f:
+        app.state.COUNTRIES = json.load(f)
+
+    yield
+
+    # ---- Shutdown (optional cleanup) ----
+    # e.g. close DB connections if needed
 
 #### End point to define root
 @app.get("/", tags=["root"])
@@ -38,7 +52,16 @@ async def read_root() -> dict:
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    logger.info("Starting TradeLens API with auto-reload enabled")
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True,
+        log_level="info",
+        access_log=True,
+        log_config=APP_LOGGING_CONFIG,
+    )
 
 # ------------------
 #  OLD QUERY NOTES, POSSIBLY USEFUL FOR TESTING
