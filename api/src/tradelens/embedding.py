@@ -387,10 +387,35 @@ def embedding_autocomplete(
     """
     Core autocomplete function using embedding similarity search.
 
-    Routes the query through code search, semantic search, or string
-    matching depending on the content of *search_term*.  Falls back
-    through each strategy in order until results are found.
+    Routes the query through different search strategies depending on the
+    content and length of *search_term*. The function is designed to balance
+    precision for short queries with semantic relevance for longer queries.
 
+    Suggestions are generated using different search strategies depending on
+    the content and length of *search_term*.
+
+    If *type_filter* is provided, only matching item types are considered. If
+    *search_term* is empty, the first *limit* items are returned.
+
+    Numeric queries (digits, spaces, and dots only) are matched against item
+    codes using prefix matching.
+
+    Short text queries (≤2 characters) use case-insensitive prefix matching
+    against the item name or description.
+
+    Longer text queries (>2 characters) use semantic search based on cosine
+    similarity between the query embedding and precomputed item embeddings.
+    The minimum similarity threshold is determined by
+    :func:`get_semantic_threshold`, with shorter semantic queries requiring
+    higher similarity scores.
+
+    If semantic search returns no matches, the function falls back to string
+    matching. Queries >3 characters use case-insensitive substring matching,
+    while queries of 1-3 characters use prefix matching.
+
+    Results are returned in descending semantic similarity order where
+    applicable. If no matches are found, an empty list is returned.
+    
     Parameters
     ----------
     search_term : str or None
