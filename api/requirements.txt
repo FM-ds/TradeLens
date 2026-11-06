@@ -3,7 +3,7 @@ annotated-types==0.7.0
 anyio==4.9.0
 appnope @ file:///home/conda/feedstock_root/build_artifacts/appnope_1649077682618/work
 archspec @ file:///croot/archspec_1697725767277/work
-arro3-core==0.5.1
+arro3-core==0.8.3
 asttokens @ file:///home/conda/feedstock_root/build_artifacts/asttokens_1698341106958/work
 attrs @ file:///home/conda/feedstock_root/build_artifacts/attrs_1683424013410/work
 beautifulsoup4==4.13.4
