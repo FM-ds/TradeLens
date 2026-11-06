@@ -21,7 +21,7 @@ et_xmlfile==2.0.0
 executing==2.2.0
 fastapi==0.115.13
 fastparquet==2024.11.0
-filelock==3.20.3
+filelock==4.1.0
 folium==0.20.0
 fsspec==2025.5.1
 geopandas==1.1.2
