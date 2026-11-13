@@ -22,7 +22,7 @@ license = { text = "MIT" }
 
 [project.optional-dependencies]
 test = [
-    "pytest==9.0.2",
+    "pytest==9.2.0",
     "httpx==0.28.1",
 ]
 
