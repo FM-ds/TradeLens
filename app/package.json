@@ -22,7 +22,7 @@
     "lucide-react": "^0.522.0",
     "react": "^19.2.5",
     "react-dom": "^19.3.0",
-    "react-vega": "^7.4.3",
+    "react-vega": "^8.0.0",
     "recharts": "^2.15.4",
     "tailwindcss": "^4.1.10",
     "vega": "^6.4.0",
