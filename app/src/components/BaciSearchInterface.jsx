@@ -45,6 +45,36 @@ const BaciSearchInterface = ({
     }
   }, [fromCountrySearch, toCountrySearch, showFromCountrySuggestions, showToCountrySuggestions, config, api.searchCountries]);
 
+  // Trigger search when dropdown is shown with empty search
+  useEffect(() => {
+    if (config && showFromCountrySuggestions && !fromCountrySearch) {
+      api.searchCountries('');
+    }
+  }, [showFromCountrySuggestions, fromCountrySearch, config, api.searchCountries]);
+
+  useEffect(() => {
+    if (config && showToCountrySuggestions && !toCountrySearch) {
+      api.searchCountries('');
+    }
+  }, [showToCountrySuggestions, toCountrySearch, config, api.searchCountries]);
+
+  // Filter out already-selected countries from suggestions
+  const getFilteredCountrySuggestions = (suggestions, selectedCountries, isFromCountry) => {
+    const selectedNames = selectedCountries.map(c => typeof c === 'string' ? c : c.country_name);
+    return suggestions.filter(suggestion => {
+      const countryName = suggestion.country_name || suggestion;
+      return !selectedNames.includes(countryName);
+    });
+  };
+
+  const handleShowFromCountrySuggestions = (show) => {
+    setShowFromCountrySuggestions(show);
+  };
+
+  const handleShowToCountrySuggestions = (show) => {
+    setShowToCountrySuggestions(show);
+  };
+
   // Event handlers
   const handleProductSearch = (value) => {
     setProductSearch(value);
@@ -170,7 +200,7 @@ const BaciSearchInterface = ({
         fromCountrySearch={fromCountrySearch}
         onFromCountrySearch={handleFromCountrySearch}
         showFromCountrySuggestions={showFromCountrySuggestions}
-        countrySuggestions={api.countrySuggestions}
+        countrySuggestions={getFilteredCountrySuggestions(api.countrySuggestions, fromCountries, true)}
         onSelectFromCountry={handleSelectFromCountry}
         onRemoveFromCountry={handleRemoveFromCountry}
         toCountries={toCountries}
@@ -179,8 +209,8 @@ const BaciSearchInterface = ({
         showToCountrySuggestions={showToCountrySuggestions}
         onSelectToCountry={handleSelectToCountry}
         onRemoveToCountry={handleRemoveToCountry}
-        onShowFromCountrySuggestions={setShowFromCountrySuggestions}
-        onShowToCountrySuggestions={setShowToCountrySuggestions}
+        onShowFromCountrySuggestions={handleShowFromCountrySuggestions}
+        onShowToCountrySuggestions={handleShowToCountrySuggestions}
         startYear={startYear}
         onStartYearChange={setStartYear}
         endYear={endYear}

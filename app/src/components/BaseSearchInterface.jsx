@@ -149,9 +149,14 @@ const BaseSearchInterface = ({
               <input
                 type="text"
                 value={fromCountrySearch}
-                onChange={(e) => onFromCountrySearch(e.target.value)}
+                onChange={(e) => {
+                  onFromCountrySearch(e.target.value);
+                  onShowFromCountrySuggestions(true);
+                }}
                 onFocus={() => onShowFromCountrySuggestions(true)}
-                onBlur={() => onShowFromCountrySuggestions(false)}
+                onBlur={(e) => {
+                  setTimeout(() => onShowFromCountrySuggestions(false), 200);
+                }}
                 className="w-full bg-transparent text-white text-lg placeholder-gray-400 focus:outline-none border-b-2 border-gray-600 focus:border-blue-500 transition-colors py-3"
                 placeholder="Add exporter country..."
                 disabled={disabled}
@@ -201,9 +206,14 @@ const BaseSearchInterface = ({
               <input
                 type="text"
                 value={toCountrySearch}
-                onChange={(e) => onToCountrySearch(e.target.value)}
+                onChange={(e) => {
+                  onToCountrySearch(e.target.value);
+                  onShowToCountrySuggestions(true);
+                }}
                 onFocus={() => onShowToCountrySuggestions(true)}
-                onBlur={() => onShowToCountrySuggestions(false)}
+                onBlur={(e) => {
+                  setTimeout(() => onShowToCountrySuggestions(false), 200);
+                }}
                 className="w-full bg-transparent text-white text-lg placeholder-gray-400 focus:outline-none border-b-2 border-gray-600 focus:border-blue-500 transition-colors py-3"
                 placeholder="Add importer country..."
                 disabled={disabled}
