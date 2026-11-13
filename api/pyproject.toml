@@ -15,7 +15,8 @@ dependencies = [
     "numpy==1.26.4",
     "pydantic==2.13.5",
     "sentence-transformers==5.0.0",
-    "uvicorn==0.34.3"
+    "uvicorn==0.34.3",
+    "pandas>=2.2.3,<3",
 ]
 
 license = { text = "MIT" }
