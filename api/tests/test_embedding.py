@@ -1,9 +1,11 @@
 import tradelens.embedding as embedding
 
+from tradelens.data_loading import load_embeddings_data
+
 from pathlib import Path
 
 base_directory = Path(__file__).parent.parent  # Adjust this path as needed
-embeddings_data = embedding.load_embeddings_data(str(base_directory) + "/")
+embeddings_data = load_embeddings_data(str(base_directory) + "/")
 embedding_model, embedding_matrices = embedding.setup_embeddings(
     embeddings_data)
 
@@ -91,9 +93,10 @@ def test_embedding_automcomplete():
     )
 
     expected_response = [
-        {'code': 270111, 'description': 'Coal: anthracite, whether or not pulverised, but not agglomerated'},
-        {'code': 270112, 'description': 'Coal: bituminous, whether or not pulverised, but not agglomerated'},
-        {'code': 270119, 'description': 'Coal: (other than anthracite and bituminous), whether or not pulverised but not agglomerated'}]
+        {'code': '270111', 'description': 'Coal: anthracite, whether or not pulverised, but not agglomerated'},
+        {'code': '270112', 'description': 'Coal: bituminous, whether or not pulverised, but not agglomerated'},
+        {'code': '270119', 'description': 'Coal: (other than anthracite and bituminous), whether or not pulverised but not agglomerated'}]
+
     assert actual_response == expected_response
 
     """Test function returns codes that ALL start with 2 when search term is 2"""

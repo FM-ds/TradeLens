@@ -14,6 +14,7 @@ call %VENV_DIR%\Scripts\activate
 
 echo Installing project in editable mode...
 pip install -e ./
+pip install -e ".[test]"
 
 echo Running tests...
 pytest
